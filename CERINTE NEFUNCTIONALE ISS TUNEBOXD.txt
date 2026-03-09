@@ -1,0 +1,16 @@
+CERINTE NEFUNCTIONALE ISS TUNEBOXD
+
+1. IMAGE CACHING
+	- Nu vom descarca coperta unui album de fiecare data cand cineva cauta un album anume.
+
+2. AVAILABILITY & SPEED
+	- Pagina profilului unui user trebuie sa se incarce in mai putin de 2 secunde.
+	- Rezultatele cautarii trebuie sa apara in max. 500ms de la tastarea interogarii
+
+3. SECURITY
+	- Parolele vor fi stocate folosind algoritmi de hashing siguri
+	
+4. MENTENABILITY
+	- Codul va fi documentat a.i. un nou dezvoltator sa poata adauga o functionalitate noua
+
+
