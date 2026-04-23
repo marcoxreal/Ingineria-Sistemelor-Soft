@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<StackPane xmlns="http://javafx.com/javafx"
+           xmlns:fx="http://javafx.com/fxml"
+           fx:controller="org.example.controller.RegisterController"
+           stylesheets="@styles.css"
+           prefHeight="400.0"
+           prefWidth="600.0">
+
+    <VBox alignment="CENTER"
+          spacing="12"
+          prefWidth="360"
+          prefHeight="360"
+          maxWidth="360"
+          maxHeight="360"
+          styleClass="card">
+
+        <Label text="Create Account" styleClass="title-label"/>
+
+        <TextField fx:id="usernameField" promptText="Username"/>
+        <TextField fx:id="emailField" promptText="Email"/>
+        <PasswordField fx:id="passwordField" promptText="Password"/>
+
+        <Button text="Register" onAction="#handleRegister"/>
+
+        <HBox spacing="5" alignment="CENTER">
+            <Label text="Already have an account?"/>
+            <Hyperlink text="Login" onAction="#handleGoToLogin"/>
+        </HBox>
+
+    </VBox>
+
+</StackPane>
