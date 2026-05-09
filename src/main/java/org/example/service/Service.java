@@ -1,12 +1,12 @@
 package org.example.service;
 
 import org.example.domain.User;
+import org.example.dto.ReleaseGroup;
 import org.example.repository.FollowRepository;
 import org.example.repository.Repository;
 import org.example.repository.UserRepository;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.StreamSupport;
 
@@ -14,16 +14,22 @@ import org.example.utils.IObserver;
 import org.example.utils.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
+import org.example.api.MusicBrainzClient;
+import org.example.domain.AlbumTest;
+
 public class Service implements IService{
     private final Repository<Integer, User> userRepository;
     private final FollowRepository followRepository;
+    private final MusicBrainzClient musicBrainzClient;
 
     private Map<Integer, IObserver> loggedClients;
 
-    public Service(Repository<Integer, User> userRepository, FollowRepository followRepository) {
+    public Service(Repository<Integer, User> userRepository, FollowRepository followRepository, MusicBrainzClient musicBrainzClient) {
         this.userRepository = userRepository;
         this.followRepository = followRepository;
         this.loggedClients = new ConcurrentHashMap<>();
+        this.musicBrainzClient = musicBrainzClient;
+
     }
 
     @Override
@@ -107,5 +113,95 @@ public class Service implements IService{
 
     public boolean isFollowing(int followerId, int followedId) {
         return followRepository.isFollowing(followerId, followedId);
+    }
+
+
+//    public List<AlbumTest> searchAlbums(String query) {
+//
+//        List<AlbumTest> albums = new ArrayList<>();
+//
+//        try {
+//            var response = musicBrainzClient.searchAlbums(query);
+//
+//            System.out.println("DEBUG RESPONSE: " + response);
+//
+//            if (response == null || response.getReleases() == null) {
+//                System.out.println("No releases returned!");
+//                return List.of();
+//            }
+//
+//            System.out.println("Releases found: " + response.getReleases().size());
+//
+//            for (Release r : response.getReleases()) {
+//                System.out.println("TITLE: " + r.getTitle());
+//            }
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//        return albums;
+//    }
+
+    public List<AlbumTest> searchAlbums(String query) {
+
+        List<AlbumTest> albums = new ArrayList<>();
+
+        try {
+            if (query == null || query.isBlank()) {
+                return albums;
+            }
+
+            String q = query.trim();
+
+            var response = musicBrainzClient.searchAlbums(q);
+
+            List<ReleaseGroup> groups =
+                    (response != null && response.getReleaseGroups() != null)
+                            ? response.getReleaseGroups()
+                            : List.of();
+
+            Set<String> seen = new HashSet<>();
+
+            for (ReleaseGroup group : groups) {
+
+                if (group == null)
+                    continue;
+
+                String title = group.getTitle();
+                if (title == null || !seen.add(title.toLowerCase()))
+                    continue;
+
+                String artist = getArtistName(group);
+
+                String coverUrl =
+                        group.getId() == null || group.getId().isBlank()
+                                ? ""
+                                : "https://coverartarchive.org/release-group/"
+                                        + group.getId()
+                                        + "/front";
+
+                albums.add(new AlbumTest(
+                        title,
+                        artist,
+                        coverUrl,
+                        0.0
+                ));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return albums;
+    }
+
+    private String getArtistName(ReleaseGroup group) {
+        if (group.getArtistCredit() == null || group.getArtistCredit().isEmpty()) {
+            return "Unknown Artist";
+        }
+
+        String name = group.getArtistCredit().get(0).getName();
+        return name == null || name.isBlank() ? "Unknown Artist" : name;
     }
 }

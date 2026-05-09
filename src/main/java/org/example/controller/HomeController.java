@@ -2,6 +2,7 @@ package org.example.controller;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
@@ -10,7 +11,12 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import org.example.domain.AlbumTest;
+import org.example.service.Service;
+import org.example.utils.AppContext;
 import org.example.utils.SceneManager;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class HomeController {
 
@@ -21,7 +27,18 @@ public class HomeController {
 
     private ObservableList<AlbumTest> allAlbums;
 
+    private Service service;
+
+    private javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(400));
+    private final AtomicInteger searchVersion = new AtomicInteger();
+
     public void initialize() {
+        this.service = AppContext.service;
+
+        searchBar.textProperty().addListener((obs, oldVal, newVal) -> {
+            pause.setOnFinished(e -> handleSearch());
+            pause.playFromStart();
+        });
         loadMockFeed();
     }
 
@@ -42,7 +59,9 @@ public class HomeController {
         albumGrid.getChildren().clear();
 
         for (AlbumTest album : albums) {
-            albumGrid.getChildren().add(createAlbumCard(album));
+            if (album != null) {
+                albumGrid.getChildren().add(createAlbumCard(album));
+            }
         }
     }
 
@@ -53,12 +72,11 @@ public class HomeController {
         cover.setFitHeight(140);
         cover.setPreserveRatio(false);
 
-        // Load image if available
         if (album.getCoverUrl() != null && !album.getCoverUrl().isEmpty()) {
             try {
-                Image img = new Image(album.getCoverUrl(), false);
+                Image img = new Image(album.getCoverUrl(), true);
                 cover.setImage(img);
-            } catch (Exception e) {
+            } catch (IllegalArgumentException e) {
                 cover.setImage(null);
             }
         }
@@ -80,15 +98,14 @@ public class HomeController {
         }
 
         // Title & artist
-        Label title = new Label(album.getTitle());
+        Label title = new Label(displayText(album.getTitle(), "Unknown Album"));
         title.setWrapText(true);
         title.setStyle("-fx-font-weight: bold;");
 
-        Label artist = new Label(album.getArtist());
+        Label artist = new Label(displayText(album.getArtist(), "Unknown Artist"));
         artist.setStyle("-fx-text-fill: #666;");
 
-        // Rating
-        Label rating = new Label("★ " + album.getRating());
+        Label rating = new Label("Rating " + album.getRating());
         rating.setStyle("-fx-text-fill: #f39c12; -fx-font-weight: bold;");
 
         VBox info = new VBox(3, title, artist, rating);
@@ -102,12 +119,6 @@ public class HomeController {
         -fx-background-radius: 10;
         -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0.2, 0, 3);
     """);
-
-        // Hover effect (slightly nicer)
-        card.setOnMouseEntered(e ->
-                card.setScaleX(1.05));
-        card.setOnMouseExited(e ->
-                card.setScaleX(1.0));
 
         card.setOnMouseEntered(e -> {
             card.setScaleX(1.05);
@@ -130,19 +141,56 @@ public class HomeController {
         controller.setAlbum(album);
     }
 
+    public List<AlbumTest> searchAlbums(String query) {
+
+        final String finalQuery = query.toLowerCase();
+
+        return allAlbums.stream()
+                .filter(album ->
+                        album.getTitle().toLowerCase().contains(finalQuery)
+                                ||
+                                album.getArtist().toLowerCase().contains(finalQuery)
+                )
+                .toList();
+    }
+
     @FXML
     public void handleSearch() {
-        String query = searchBar.getText().toLowerCase();
 
-        ObservableList<AlbumTest> filtered = FXCollections.observableArrayList();
+        String query = searchBar.getText();
+        int requestVersion = searchVersion.incrementAndGet();
 
-        for (AlbumTest album : allAlbums) {
-            if (album.getTitle().toLowerCase().contains(query) ||
-                    album.getArtist().toLowerCase().contains(query)) {
-                filtered.add(album);
-            }
+        if (query == null || query.isBlank()) {
+            renderAlbums(allAlbums);
+            return;
         }
 
-        renderAlbums(filtered);
+        if (service == null) {
+            renderAlbums(FXCollections.observableArrayList(searchAlbums(query)));
+            return;
+        }
+
+        Thread searchThread = new Thread(() -> {
+            List<AlbumTest> searchResults;
+            try {
+                searchResults = service.searchAlbums(query);
+            } catch (Exception e) {
+                searchResults = List.of();
+            }
+            final List<AlbumTest> results = searchResults;
+
+            Platform.runLater(() -> {
+                if (requestVersion == searchVersion.get()) {
+                    renderAlbums(FXCollections.observableArrayList(results));
+                }
+            });
+        }, "album-search");
+        searchThread.setDaemon(true);
+        searchThread.start();
     }
+
+    private String displayText(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
 }

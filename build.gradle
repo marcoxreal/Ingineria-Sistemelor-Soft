@@ -47,6 +47,8 @@ dependencies {
 
     implementation 'org.mindrot:jbcrypt:0.4'
     implementation group: 'org.postgresql', name: 'postgresql', version: '42.5.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
+
 }
 
 test {
