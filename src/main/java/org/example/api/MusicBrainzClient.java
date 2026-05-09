@@ -28,12 +28,17 @@ public class MusicBrainzClient {
     public MusicBrainzResponse searchAlbums(String query)
             throws IOException, InterruptedException {
 
+        String musicBrainzQuery =
+                "(artist:\"" + escapeQuery(query) + "\" AND primarytype:album) OR "
+                        + "(releasegroup:\"" + escapeQuery(query) + "\" AND primarytype:album)";
+
         String encoded =
-                URLEncoder.encode(query, StandardCharsets.UTF_8);
+                URLEncoder.encode(musicBrainzQuery, StandardCharsets.UTF_8);
 
         String url =
                 BASE_URL +
                         "?query=" + encoded +
+                        "&limit=100" +
                         "&fmt=json";
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -58,5 +63,9 @@ public class MusicBrainzClient {
                 response.body(),
                 MusicBrainzResponse.class
         );
+    }
+
+    private String escapeQuery(String query) {
+        return query.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

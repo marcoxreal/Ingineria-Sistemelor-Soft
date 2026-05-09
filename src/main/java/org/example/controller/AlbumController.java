@@ -6,6 +6,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.example.domain.AlbumTest;
+import org.example.utils.SceneManager;
 
 public class AlbumController {
 
@@ -20,17 +21,33 @@ public class AlbumController {
     public void setAlbum(AlbumTest album) {
         this.currentAlbum = album;
 
-        titleLabel.setText(album.getTitle());
-        artistLabel.setText(album.getArtist());
-        ratingLabel.setText("★ " + album.getRating());
+        titleLabel.setText(displayText(album.getTitle(), "Unknown Album"));
+        artistLabel.setText(displayText(album.getArtist(), "Unknown Artist"));
+        ratingLabel.setText("Rating " + album.getRating());
 
         if (album.getCoverUrl() != null && !album.getCoverUrl().isEmpty()) {
-            coverImage.setImage(new Image(album.getCoverUrl(), false));
+            try {
+                coverImage.setImage(new Image(album.getCoverUrl(), true));
+            } catch (IllegalArgumentException e) {
+                coverImage.setImage(null);
+            }
+        } else {
+            coverImage.setImage(null);
         }
     }
 
     @FXML
     public void handleSearch() {
-        System.out.println("Search from album page: " + searchBar.getText());
+        HomeController controller = SceneManager.switchScene("/org/example/home-view.fxml");
+        controller.startSearch(searchBar.getText());
+    }
+
+    @FXML
+    public void handleBack() {
+        SceneManager.switchScene("/org/example/home-view.fxml");
+    }
+
+    private String displayText(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
     }
 }

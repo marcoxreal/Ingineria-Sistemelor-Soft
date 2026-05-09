@@ -14,13 +14,27 @@ import org.example.utils.IObserver;
 import org.example.utils.Logger;
 import org.mindrot.jbcrypt.BCrypt;
 
+import org.example.api.ArtworkClient;
 import org.example.api.MusicBrainzClient;
 import org.example.domain.AlbumTest;
 
 public class Service implements IService{
+    private static final Set<String> NOISY_SECONDARY_TYPES = Set.of(
+            "Compilation",
+            "Demo",
+            "DJ-mix",
+            "Interview",
+            "Live",
+            "Mixtape/Street",
+            "Remix",
+            "Soundtrack",
+            "Spokenword"
+    );
+
     private final Repository<Integer, User> userRepository;
     private final FollowRepository followRepository;
     private final MusicBrainzClient musicBrainzClient;
+    private final ArtworkClient artworkClient;
 
     private Map<Integer, IObserver> loggedClients;
 
@@ -29,6 +43,7 @@ public class Service implements IService{
         this.followRepository = followRepository;
         this.loggedClients = new ConcurrentHashMap<>();
         this.musicBrainzClient = musicBrainzClient;
+        this.artworkClient = new ArtworkClient();
 
     }
 
@@ -155,6 +170,7 @@ public class Service implements IService{
             String q = query.trim();
 
             var response = musicBrainzClient.searchAlbums(q);
+            Map<String, String> artworkByAlbum = getArtworkByAlbum(q);
 
             List<ReleaseGroup> groups =
                     (response != null && response.getReleaseGroups() != null)
@@ -168,18 +184,28 @@ public class Service implements IService{
                 if (group == null)
                     continue;
 
+                if (!isCleanAlbumGroup(group)) {
+                    continue;
+                }
+
                 String title = group.getTitle();
-                if (title == null || !seen.add(title.toLowerCase()))
+                if (title == null)
                     continue;
 
                 String artist = getArtistName(group);
 
-                String coverUrl =
-                        group.getId() == null || group.getId().isBlank()
-                                ? ""
-                                : "https://coverartarchive.org/release-group/"
-                                        + group.getId()
-                                        + "/front";
+                if (!matchesAlbumSearch(q, title, artist)) {
+                    continue;
+                }
+
+                if (!seen.add((title + "|" + artist).toLowerCase(Locale.ROOT))) {
+                    continue;
+                }
+
+                String coverUrl = artworkClient.findCover(artworkByAlbum, title, artist);
+                if (coverUrl.isBlank()) {
+                    coverUrl = getCoverArtArchiveUrl(group);
+                }
 
                 albums.add(new AlbumTest(
                         title,
@@ -193,7 +219,71 @@ public class Service implements IService{
             e.printStackTrace();
         }
 
-        return albums;
+        String normalizedQuery = normalize(query);
+        long artistMatchCount = albums.stream()
+                .filter(album -> normalize(album.getArtist()).contains(normalizedQuery))
+                .count();
+
+        if (artistMatchCount >= 3) {
+            albums.removeIf(album -> !normalize(album.getArtist()).contains(normalizedQuery));
+        }
+
+        return albums.stream().limit(40).toList();
+    }
+
+    private Map<String, String> getArtworkByAlbum(String query) {
+        try {
+            return artworkClient.searchAlbumCovers(query);
+        } catch (Exception e) {
+            return Map.of();
+        }
+    }
+
+    private String getCoverArtArchiveUrl(ReleaseGroup group) {
+        if (group.getId() == null || group.getId().isBlank()) {
+            return "";
+        }
+
+        return "https://coverartarchive.org/release-group/" + group.getId() + "/front";
+    }
+
+    private boolean isCleanAlbumGroup(ReleaseGroup group) {
+        if (!"Album".equalsIgnoreCase(group.getPrimaryType())) {
+            return false;
+        }
+
+        if (group.getSecondaryTypes() == null || group.getSecondaryTypes().isEmpty()) {
+            return true;
+        }
+
+        return group.getSecondaryTypes().stream()
+                .noneMatch(NOISY_SECONDARY_TYPES::contains);
+    }
+
+    private boolean matchesAlbumSearch(String query, String title, String artist) {
+        String normalizedQuery = normalize(query);
+        String normalizedTitle = normalize(title);
+        String normalizedArtist = normalize(artist);
+        String combined = normalizedTitle + " " + normalizedArtist;
+
+        if (normalizedTitle.contains(normalizedQuery) || normalizedArtist.contains(normalizedQuery)) {
+            return true;
+        }
+
+        String[] terms = normalizedQuery.split(" ");
+        for (String term : terms) {
+            if (!term.isBlank() && !combined.contains(term)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private String normalize(String value) {
+        return value == null
+                ? ""
+                : value.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]+", " ").trim();
     }
 
     private String getArtistName(ReleaseGroup group) {

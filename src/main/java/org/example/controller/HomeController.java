@@ -31,11 +31,15 @@ public class HomeController {
 
     private javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(400));
     private final AtomicInteger searchVersion = new AtomicInteger();
+    private boolean suppressSearchListener;
 
     public void initialize() {
         this.service = AppContext.service;
 
         searchBar.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (suppressSearchListener) {
+                return;
+            }
             pause.setOnFinished(e -> handleSearch());
             pause.playFromStart();
         });
@@ -143,15 +147,22 @@ public class HomeController {
 
     public List<AlbumTest> searchAlbums(String query) {
 
-        final String finalQuery = query.toLowerCase();
+        final String finalQuery = query == null ? "" : query.toLowerCase();
 
         return allAlbums.stream()
                 .filter(album ->
-                        album.getTitle().toLowerCase().contains(finalQuery)
+                        displayText(album.getTitle(), "").toLowerCase().contains(finalQuery)
                                 ||
-                                album.getArtist().toLowerCase().contains(finalQuery)
+                                displayText(album.getArtist(), "").toLowerCase().contains(finalQuery)
                 )
                 .toList();
+    }
+
+    public void startSearch(String query) {
+        suppressSearchListener = true;
+        searchBar.setText(query == null ? "" : query);
+        suppressSearchListener = false;
+        handleSearch();
     }
 
     @FXML

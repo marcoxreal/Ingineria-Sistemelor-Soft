@@ -14,6 +14,9 @@ public class ReleaseGroup {
     @JsonProperty("primary-type")
     private String primaryType;
 
+    @JsonProperty("secondary-types")
+    private List<String> secondaryTypes;
+
     @JsonProperty("artist-credit")
     private List<ArtistCredit> artistCredit;
 
@@ -31,5 +34,9 @@ public class ReleaseGroup {
 
     public List<ArtistCredit> getArtistCredit() {
         return artistCredit;
+    }
+
+    public List<String> getSecondaryTypes() {
+        return secondaryTypes;
     }
 }
