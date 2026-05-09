@@ -33,8 +33,30 @@
             <Label fx:id="titleLabel" styleClass="title-label"/>
             <Label fx:id="artistLabel" styleClass="artist-label"/>
             <Label fx:id="ratingLabel" styleClass="rating-label"/>
+            <Label fx:id="listenedLabel" styleClass="muted-text"/>
 
-            <Label text="Reviews coming soon..." styleClass="muted-text"/>
+            <HBox alignment="CENTER" spacing="10">
+                <Button text="Mark Listened" onAction="#handleMarkListened"/>
+                <Button text="Log Album" onAction="#handleLogAlbum"/>
+            </HBox>
+
+            <VBox spacing="8" styleClass="review-box">
+                <Label text="Rate and review" styleClass="section-title-label"/>
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="Rating"/>
+                    <Spinner fx:id="ratingSpinner" editable="true" prefWidth="80"/>
+                    <Button text="Submit Review" onAction="#handleSubmitReview"/>
+                </HBox>
+                <TextArea fx:id="reviewTextArea"
+                          promptText="Write a review"
+                          prefRowCount="3"
+                          wrapText="true"/>
+            </VBox>
+
+            <VBox spacing="8" styleClass="review-box">
+                <Label text="Recent reviews" styleClass="section-title-label"/>
+                <ListView fx:id="reviewsList" prefHeight="160"/>
+            </VBox>
 
         </VBox>
     </center>

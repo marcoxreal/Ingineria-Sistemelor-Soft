@@ -85,3 +85,51 @@
 .muted-text {
     -fx-text-fill: #999;
 }
+
+.user-page {
+    -fx-padding: 30;
+    -fx-background-color: transparent;
+    -fx-effect: none;
+}
+
+.user-header,
+.activity-section {
+    -fx-background-color: white;
+    -fx-padding: 20;
+    -fx-background-radius: 10;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.12), 10, 0.2, 0, 3);
+    -fx-max-width: 720;
+}
+
+.profile-image-frame {
+    -fx-background-color: #eef2f7;
+    -fx-background-radius: 10;
+    -fx-min-width: 96;
+    -fx-min-height: 96;
+    -fx-pref-width: 96;
+    -fx-pref-height: 96;
+}
+
+.user-name-label {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+}
+
+.stat-label {
+    -fx-text-fill: #555;
+    -fx-font-weight: bold;
+}
+
+.section-title-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.review-box {
+    -fx-background-color: #ffffff;
+    -fx-padding: 12;
+    -fx-background-radius: 8;
+    -fx-border-color: #d0d7de;
+    -fx-border-radius: 8;
+    -fx-max-width: 520;
+}

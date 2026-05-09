@@ -10,7 +10,8 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
-import org.example.domain.AlbumTest;
+import org.example.domain.Album;
+import org.example.domain.User;
 import org.example.service.Service;
 import org.example.utils.AppContext;
 import org.example.utils.SceneManager;
@@ -21,11 +22,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HomeController {
 
     @FXML private TextField searchBar;
+    @FXML private TextField userSearchBar;
 
     @FXML
     private TilePane albumGrid;
 
-    private ObservableList<AlbumTest> allAlbums;
+    private ObservableList<Album> allAlbums;
 
     private Service service;
 
@@ -48,28 +50,28 @@ public class HomeController {
 
     private void loadMockFeed() {
         allAlbums = FXCollections.observableArrayList(
-                new AlbumTest("To Pimp a Butterfly", "Kendrick Lamar", "", 4.6),
-                new AlbumTest("In Rainbows", "Radiohead", "https://upload.wikimedia.org/wikipedia/en/2/2e/In_Rainbows_Official_Cover.jpg", 4.7),
-                new AlbumTest("Rust In Peace", "Megadeth", "", 5.0),
-                new AlbumTest("Master of Puppets", "Metallica", "", 4.8),
-                new AlbumTest("Blonde", "Frank Ocean", "", 4.9),
-                new AlbumTest("Currents", "Tame Impala", "", 4.5)
+                new Album(null, "local:to-pimp-a-butterfly:kendrick-lamar", "To Pimp a Butterfly", "Kendrick Lamar", null, "Album", ""),
+                new Album(null, "local:in-rainbows:radiohead", "In Rainbows", "Radiohead", null, "Album", "https://upload.wikimedia.org/wikipedia/en/2/2e/In_Rainbows_Official_Cover.jpg"),
+                new Album(null, "local:rust-in-peace:megadeth", "Rust In Peace", "Megadeth", null, "Album", ""),
+                new Album(null, "local:master-of-puppets:metallica", "Master of Puppets", "Metallica", null, "Album", ""),
+                new Album(null, "local:blonde:frank-ocean", "Blonde", "Frank Ocean", null, "Album", ""),
+                new Album(null, "local:currents:tame-impala", "Currents", "Tame Impala", null, "Album", "")
         );
 
         renderAlbums(allAlbums);
     }
 
-    private void renderAlbums(ObservableList<AlbumTest> albums) {
+    private void renderAlbums(ObservableList<Album> albums) {
         albumGrid.getChildren().clear();
 
-        for (AlbumTest album : albums) {
+        for (Album album : albums) {
             if (album != null) {
                 albumGrid.getChildren().add(createAlbumCard(album));
             }
         }
     }
 
-    private VBox createAlbumCard(AlbumTest album) {
+    private VBox createAlbumCard(Album album) {
 
         ImageView cover = new ImageView();
         cover.setFitWidth(140);
@@ -109,7 +111,7 @@ public class HomeController {
         Label artist = new Label(displayText(album.getArtist(), "Unknown Artist"));
         artist.setStyle("-fx-text-fill: #666;");
 
-        Label rating = new Label("Rating " + album.getRating());
+        Label rating = new Label("Album");
         rating.setStyle("-fx-text-fill: #f39c12; -fx-font-weight: bold;");
 
         VBox info = new VBox(3, title, artist, rating);
@@ -138,14 +140,14 @@ public class HomeController {
         return card;
     }
 
-    private void openAlbumPage(AlbumTest album) {
+    private void openAlbumPage(Album album) {
         AlbumController controller = (AlbumController)
                 SceneManager.switchScene("/org/example/album-view.fxml");
 
         controller.setAlbum(album);
     }
 
-    public List<AlbumTest> searchAlbums(String query) {
+    public List<Album> searchAlbums(String query) {
 
         final String finalQuery = query == null ? "" : query.toLowerCase();
 
@@ -166,6 +168,44 @@ public class HomeController {
     }
 
     @FXML
+    public void handleUserSearch() {
+        if (service == null) {
+            showUserSearchError("User search is not available right now.");
+            return;
+        }
+
+        String query = userSearchBar.getText();
+        List<User> users = service.searchUsers(query, AppContext.currentUser);
+
+        if (users.isEmpty()) {
+            showUserSearchError("No users found.");
+            return;
+        }
+
+        User exactMatch = users.stream()
+                .filter(user -> user.getUsername().equalsIgnoreCase(query.trim()))
+                .findFirst()
+                .orElse(users.get(0));
+
+        openUserPage(exactMatch);
+    }
+
+    @FXML
+    public void handleMyProfile() {
+        if (AppContext.currentUser == null) {
+            showUserSearchError("You must be logged in to view your profile.");
+            return;
+        }
+
+        openUserPage(AppContext.currentUser);
+    }
+
+    private void openUserPage(User user) {
+        UserController controller = SceneManager.switchScene("/org/example/user-view.fxml");
+        controller.setUser(user);
+    }
+
+    @FXML
     public void handleSearch() {
 
         String query = searchBar.getText();
@@ -182,13 +222,13 @@ public class HomeController {
         }
 
         Thread searchThread = new Thread(() -> {
-            List<AlbumTest> searchResults;
+            List<Album> searchResults;
             try {
                 searchResults = service.searchAlbums(query);
             } catch (Exception e) {
                 searchResults = List.of();
             }
-            final List<AlbumTest> results = searchResults;
+            final List<Album> results = searchResults;
 
             Platform.runLater(() -> {
                 if (requestVersion == searchVersion.get()) {
@@ -202,6 +242,13 @@ public class HomeController {
 
     private String displayText(String value, String fallback) {
         return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private void showUserSearchError(String message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setHeaderText("User search");
+        alert.setContentText(message);
+        alert.showAndWait();
     }
 
 }

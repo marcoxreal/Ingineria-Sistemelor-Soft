@@ -1,6 +1,10 @@
 package org.example.service;
 
+import org.example.domain.Album;
 import org.example.domain.User;
+import org.example.domain.Review;
+import org.example.domain.UserActivity;
+import org.example.repository.AlbumInteractionRepository;
 import org.example.dto.ReleaseGroup;
 import org.example.repository.FollowRepository;
 import org.example.repository.Repository;
@@ -16,7 +20,6 @@ import org.mindrot.jbcrypt.BCrypt;
 
 import org.example.api.ArtworkClient;
 import org.example.api.MusicBrainzClient;
-import org.example.domain.AlbumTest;
 
 public class Service implements IService{
     private static final Set<String> NOISY_SECONDARY_TYPES = Set.of(
@@ -33,14 +36,16 @@ public class Service implements IService{
 
     private final Repository<Integer, User> userRepository;
     private final FollowRepository followRepository;
+    private final AlbumInteractionRepository albumInteractionRepository;
     private final MusicBrainzClient musicBrainzClient;
     private final ArtworkClient artworkClient;
 
     private Map<Integer, IObserver> loggedClients;
 
-    public Service(Repository<Integer, User> userRepository, FollowRepository followRepository, MusicBrainzClient musicBrainzClient) {
+    public Service(Repository<Integer, User> userRepository, FollowRepository followRepository, AlbumInteractionRepository albumInteractionRepository, MusicBrainzClient musicBrainzClient) {
         this.userRepository = userRepository;
         this.followRepository = followRepository;
+        this.albumInteractionRepository = albumInteractionRepository;
         this.loggedClients = new ConcurrentHashMap<>();
         this.musicBrainzClient = musicBrainzClient;
         this.artworkClient = new ArtworkClient();
@@ -130,37 +135,98 @@ public class Service implements IService{
         return followRepository.isFollowing(followerId, followedId);
     }
 
+    public User findUserByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            return null;
+        }
 
-//    public List<AlbumTest> searchAlbums(String query) {
-//
-//        List<AlbumTest> albums = new ArrayList<>();
-//
-//        try {
-//            var response = musicBrainzClient.searchAlbums(query);
-//
-//            System.out.println("DEBUG RESPONSE: " + response);
-//
-//            if (response == null || response.getReleases() == null) {
-//                System.out.println("No releases returned!");
-//                return List.of();
-//            }
-//
-//            System.out.println("Releases found: " + response.getReleases().size());
-//
-//            for (Release r : response.getReleases()) {
-//                System.out.println("TITLE: " + r.getTitle());
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//
-//        return albums;
-//    }
+        String query = username.trim();
 
-    public List<AlbumTest> searchAlbums(String query) {
+        return StreamSupport.stream(userRepository.getAll().spliterator(), false)
+                .filter(user -> user.getUsername().equalsIgnoreCase(query))
+                .findFirst()
+                .orElse(null);
+    }
 
-        List<AlbumTest> albums = new ArrayList<>();
+    public List<User> searchUsers(String query, User currentUser) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+
+        String normalizedQuery = query.trim().toLowerCase(Locale.ROOT);
+        Integer currentUserId = currentUser == null ? null : currentUser.getId();
+
+        return StreamSupport.stream(userRepository.getAll().spliterator(), false)
+                .filter(user -> currentUserId == null || !Objects.equals(user.getId(), currentUserId))
+                .filter(user -> user.getUsername().toLowerCase(Locale.ROOT).contains(normalizedQuery))
+                .sorted(Comparator.comparing(user -> user.getUsername().toLowerCase(Locale.ROOT)))
+                .limit(10)
+                .toList();
+    }
+
+    public void markAlbumListened(User user, Album album) {
+        requireUser(user);
+        albumInteractionRepository.markListened(user.getId(), album);
+    }
+
+    public void logAlbum(User user, Album album) {
+        requireUser(user);
+        albumInteractionRepository.logAlbum(user.getId(), album);
+    }
+
+    public boolean hasListened(User user, Album album) {
+        return user != null && albumInteractionRepository.hasListened(user.getId(), album);
+    }
+
+    public int countListenedAlbums(User user) {
+        return user == null ? 0 : albumInteractionRepository.countListenedAlbums(user.getId());
+    }
+
+    public void saveReview(User user, Album album, int rating, String reviewText) {
+        requireUser(user);
+        if (rating < 1 || rating > 5) {
+            throw new IllegalArgumentException("Rating must be between 1 and 5.");
+        }
+        albumInteractionRepository.saveReview(user.getId(), album, rating, reviewText);
+    }
+
+    public double getAlbumAverageRating(Album album) {
+        return albumInteractionRepository.getAverageRating(album);
+    }
+
+    public List<Review> getRecentReviews(Album album) {
+        return albumInteractionRepository.getRecentReviews(album, 10);
+    }
+
+    public List<UserActivity> getRecentActivity(User user) {
+        return user == null ? List.of() : albumInteractionRepository.getRecentActivity(user.getId(), 10);
+    }
+
+    public void addFavoriteAlbum(User user, Album album) {
+        requireUser(user);
+        albumInteractionRepository.addFavoriteAlbum(user.getId(), album);
+    }
+
+    public void removeFavoriteAlbum(User user, Album album) {
+        requireUser(user);
+        if (album.getId() != null) {
+            albumInteractionRepository.removeFavoriteAlbum(user.getId(), album.getId());
+        }
+    }
+
+    public List<Album> getFavoriteAlbums(User user) {
+        return user == null ? List.of() : albumInteractionRepository.getFavoriteAlbums(user.getId());
+    }
+
+    private void requireUser(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("You must be logged in.");
+        }
+    }
+
+    public List<Album> searchAlbums(String query) {
+
+        List<Album> albums = new ArrayList<>();
 
         try {
             if (query == null || query.isBlank()) {
@@ -207,11 +273,14 @@ public class Service implements IService{
                     coverUrl = getCoverArtArchiveUrl(group);
                 }
 
-                albums.add(new AlbumTest(
+                albums.add(new Album(
+                        null,
+                        group.getId(),
                         title,
                         artist,
-                        coverUrl,
-                        0.0
+                        null,
+                        "Album",
+                        coverUrl
                 ));
             }
 

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="org.example.controller.UserController"
+            stylesheets="@styles.css">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT" styleClass="top-bar">
+            <Button text="Back" onAction="#handleBack"/>
+        </HBox>
+    </top>
+
+    <center>
+        <VBox alignment="TOP_CENTER" spacing="18" styleClass="user-page">
+            <HBox alignment="CENTER_LEFT" spacing="18" styleClass="user-header">
+                <StackPane styleClass="profile-image-frame">
+                    <ImageView fx:id="profileImage"
+                               fitWidth="96"
+                               fitHeight="96"
+                               preserveRatio="true"/>
+                    <Label fx:id="profilePlaceholder" text="No Photo" styleClass="muted-text"/>
+                </StackPane>
+
+                <VBox spacing="8" HBox.hgrow="ALWAYS">
+                    <Label fx:id="usernameLabel" styleClass="user-name-label"/>
+                    <Label fx:id="emailLabel" styleClass="muted-text"/>
+                    <HBox spacing="12">
+                        <Label fx:id="followersLabel" styleClass="stat-label"/>
+                        <Label fx:id="followingLabel" styleClass="stat-label"/>
+                        <Label fx:id="listenedLabel" styleClass="stat-label"/>
+                    </HBox>
+                </VBox>
+
+                <Button fx:id="followButton" text="Follow" onAction="#handleFollowToggle"/>
+            </HBox>
+
+            <VBox spacing="10" styleClass="activity-section">
+                <HBox alignment="CENTER_LEFT" spacing="10">
+                    <Label text="Favorite albums" styleClass="section-title-label"/>
+                    <Button fx:id="addFavoriteButton" text="Add Last Viewed" onAction="#handleAddFavoriteAlbum"/>
+                    <Button fx:id="removeFavoriteButton" text="Remove Selected" onAction="#handleRemoveFavoriteAlbum"/>
+                </HBox>
+                <ListView fx:id="favoriteAlbumsList" prefHeight="140"/>
+            </VBox>
+
+            <VBox spacing="10" styleClass="activity-section">
+                <Label text="Recent activity" styleClass="section-title-label"/>
+                <Label fx:id="activityLabel" styleClass="muted-text"/>
+                <ListView fx:id="activityList" prefHeight="180"/>
+            </VBox>
+        </VBox>
+    </center>
+
+</BorderPane>

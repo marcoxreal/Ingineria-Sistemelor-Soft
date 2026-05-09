@@ -2,6 +2,7 @@ package org.example.controller;
 
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import org.example.domain.User;
 import org.example.utils.AppContext;
 import org.example.utils.SceneManager;
 import org.example.service.Service;
@@ -30,7 +31,7 @@ public class LoginController {
     @FXML
     public void handleLogin(ActionEvent event) {
         try {
-            service.login(
+            User loggedUser = service.login(
                     username.getText(),
                     password.getText(),
                     new IObserver() {
@@ -40,6 +41,7 @@ public class LoginController {
                         }
                     }
             );
+            AppContext.currentUser = loggedUser;
 
             SceneManager.switchScene("/org/example/home-view.fxml");
 

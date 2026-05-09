@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.stage.Stage;
 import org.example.api.MusicBrainzClient;
 import org.example.domain.User;
+import org.example.repository.AlbumInteractionRepository;
 import org.example.repository.FollowRepository;
 import org.example.repository.Repository;
 import org.example.repository.factory.RepositoryFactory;
@@ -22,9 +23,11 @@ public class MainApplication extends Application {
                     RepositoryFactory.getInstance().createRepository(USERS);
             FollowRepository followRepository =
                     RepositoryFactory.getInstance().createFollowRepository();
+            AlbumInteractionRepository albumInteractionRepository =
+                    RepositoryFactory.getInstance().createAlbumInteractionRepository();
             MusicBrainzClient musicBrainzClient =
                     new MusicBrainzClient();
-            Service service = new Service(userRepository, followRepository, musicBrainzClient);
+            Service service = new Service(userRepository, followRepository, albumInteractionRepository, musicBrainzClient);
             SceneManager.init(stage);
             org.example.utils.AppContext.service = service;
             SceneManager.switchScene("/org/example/login-view.fxml");

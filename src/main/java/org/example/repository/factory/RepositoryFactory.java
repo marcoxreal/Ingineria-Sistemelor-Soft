@@ -1,6 +1,7 @@
 package org.example.repository.factory;
 
 import org.example.domain.User;
+import org.example.repository.AlbumInteractionRepository;
 import org.example.repository.FollowRepository;
 import org.example.repository.Repository;
 import org.example.repository.UserRepository;
@@ -18,6 +19,11 @@ public class RepositoryFactory {
 
     public FollowRepository createFollowRepository(){
         return new FollowRepository("jdbc:postgresql://localhost:5432/tuneboxd",
+                "postgres", "123skem2");
+    }
+
+    public AlbumInteractionRepository createAlbumInteractionRepository(){
+        return new AlbumInteractionRepository("jdbc:postgresql://localhost:5432/tuneboxd",
                 "postgres", "123skem2");
     }
 

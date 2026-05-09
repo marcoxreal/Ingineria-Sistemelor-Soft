@@ -13,6 +13,9 @@
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="top-bar">
             <TextField fx:id="searchBar" promptText="Search albums or artists"/>
             <Button text="Search" onAction="#handleSearch"/>
+            <TextField fx:id="userSearchBar" promptText="Search users"/>
+            <Button text="Find User" onAction="#handleUserSearch"/>
+            <Button text="My Profile" onAction="#handleMyProfile"/>
         </HBox>
     </top>
 
