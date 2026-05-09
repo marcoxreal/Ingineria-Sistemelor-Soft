@@ -53,3 +53,35 @@
     -fx-font-size: 20px;
     -fx-font-weight: bold;
 }
+
+.tile-pane {
+    -fx-padding: 20;
+}
+
+.top-bar {
+    -fx-padding: 15;
+    -fx-background-color: white;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 10, 0.2, 0, 2);
+}
+
+.album-container {
+    -fx-background-color: white;
+    -fx-padding: 30;
+    -fx-background-radius: 15;
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0.2, 0, 4);
+}
+
+.artist-label {
+    -fx-text-fill: #666;
+    -fx-font-size: 14px;
+}
+
+.rating-label {
+    -fx-text-fill: #f39c12;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.muted-text {
+    -fx-text-fill: #999;
+}

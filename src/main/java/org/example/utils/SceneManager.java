@@ -15,7 +15,7 @@ public class SceneManager {
         primaryStage = stage;
     }
 
-    public static void switchScene(String fxmlPath) {
+    public static <T> T switchScene(String fxmlPath) {
         try {
             FXMLLoader loader = new FXMLLoader(SceneManager.class.getResource(fxmlPath));
             Parent root = loader.load();
@@ -23,6 +23,8 @@ public class SceneManager {
             Scene scene = new Scene(root);
             primaryStage.setScene(scene);
             primaryStage.show();
+
+            return loader.getController();
 
         } catch (IOException e) {
             throw new RuntimeException("Failed to load scene: " + fxmlPath, e);
