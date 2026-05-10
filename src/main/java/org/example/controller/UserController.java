@@ -7,10 +7,12 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.TilePane;
 import org.example.domain.Album;
 import org.example.domain.User;
 import org.example.domain.UserActivity;
 import org.example.service.Service;
+import org.example.utils.AlbumCardFactory;
 import org.example.utils.AppContext;
 import org.example.utils.SceneManager;
 
@@ -23,10 +25,9 @@ public class UserController {
     @FXML private Label listenedLabel;
     @FXML private Label activityLabel;
     @FXML private ListView<String> activityList;
-    @FXML private ListView<String> favoriteAlbumsList;
+    @FXML private TilePane favoriteAlbumsGrid;
     @FXML private Label profilePlaceholder;
     @FXML private Button addFavoriteButton;
-    @FXML private Button removeFavoriteButton;
     @FXML private Button followButton;
 
     private Service service;
@@ -84,27 +85,6 @@ public class UserController {
 
         try {
             service.addFavoriteAlbum(AppContext.currentUser, album);
-            renderFavoriteAlbums();
-        } catch (Exception e) {
-            showError(e.getMessage());
-        }
-    }
-
-    @FXML
-    public void handleRemoveFavoriteAlbum() {
-        if (!isOwnProfile()) {
-            return;
-        }
-
-        int selectedIndex = favoriteAlbumsList.getSelectionModel().getSelectedIndex();
-        if (selectedIndex < 0) {
-            showError("Select a favorite album to remove.");
-            return;
-        }
-
-        try {
-            Album album = service.getFavoriteAlbums(profileUser).get(selectedIndex);
-            service.removeFavoriteAlbum(AppContext.currentUser, album);
             renderFavoriteAlbums();
         } catch (Exception e) {
             showError(e.getMessage());
@@ -179,23 +159,23 @@ public class UserController {
     }
 
     private void renderFavoriteAlbums() {
-        favoriteAlbumsList.getItems().clear();
+        favoriteAlbumsGrid.getChildren().clear();
 
         if (service != null) {
             for (Album album : service.getFavoriteAlbums(profileUser)) {
-                favoriteAlbumsList.getItems().add(album.getTitle() + " - " + album.getArtist());
+                favoriteAlbumsGrid.getChildren().add(AlbumCardFactory.createAlbumCard(album));
             }
         }
 
-        if (favoriteAlbumsList.getItems().isEmpty()) {
-            favoriteAlbumsList.getItems().add("No favorite albums yet.");
+        if (favoriteAlbumsGrid.getChildren().isEmpty()) {
+            Label noAlbumsLabel = new Label("No favorite albums yet.");
+            noAlbumsLabel.setStyle("-fx-text-fill: #999;");
+            favoriteAlbumsGrid.getChildren().add(noAlbumsLabel);
         }
 
         boolean ownProfile = isOwnProfile();
         addFavoriteButton.setVisible(ownProfile);
         addFavoriteButton.setManaged(ownProfile);
-        removeFavoriteButton.setVisible(ownProfile);
-        removeFavoriteButton.setManaged(ownProfile);
     }
 
     private boolean isOwnProfile() {

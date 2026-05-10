@@ -43,9 +43,8 @@
                 <HBox alignment="CENTER_LEFT" spacing="10">
                     <Label text="Favorite albums" styleClass="section-title-label"/>
                     <Button fx:id="addFavoriteButton" text="Add Last Viewed" onAction="#handleAddFavoriteAlbum"/>
-                    <Button fx:id="removeFavoriteButton" text="Remove Selected" onAction="#handleRemoveFavoriteAlbum"/>
                 </HBox>
-                <ListView fx:id="favoriteAlbumsList" prefHeight="140"/>
+                <TilePane fx:id="favoriteAlbumsGrid" hgap="10" vgap="10" alignment="TOP_LEFT"/>
             </VBox>
 
             <VBox spacing="10" styleClass="activity-section">
