@@ -182,10 +182,10 @@ public class Service implements IService{
         return user == null ? 0 : albumInteractionRepository.countListenedAlbums(user.getId());
     }
 
-    public void saveReview(User user, Album album, int rating, String reviewText) {
+    public void saveReview(User user, Album album, double rating, String reviewText) {
         requireUser(user);
-        if (rating < 1 || rating > 5) {
-            throw new IllegalArgumentException("Rating must be between 1 and 5.");
+        if (rating < 0.5 || rating > 5.0) {
+            throw new IllegalArgumentException("Rating must be between 0.5 and 5.0.");
         }
         albumInteractionRepository.saveReview(user.getId(), album, rating, reviewText);
     }
@@ -196,6 +196,10 @@ public class Service implements IService{
 
     public List<Review> getRecentReviews(Album album) {
         return albumInteractionRepository.getRecentReviews(album, 10);
+    }
+
+    public Review getUserReviewForAlbum(User user, Album album) {
+        return user == null ? null : albumInteractionRepository.getUserReviewForAlbum(user.getId(), album);
     }
 
     public List<UserActivity> getRecentActivity(User user) {

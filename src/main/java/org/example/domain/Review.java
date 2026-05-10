@@ -6,11 +6,11 @@ public class Review {
     private final String username;
     private final String albumTitle;
     private final String artist;
-    private final int rating;
+    private final double rating;
     private final String reviewText;
     private final LocalDateTime createdAt;
 
-    public Review(String username, String albumTitle, String artist, int rating, String reviewText, LocalDateTime createdAt) {
+    public Review(String username, String albumTitle, String artist, double rating, String reviewText, LocalDateTime createdAt) {
         this.username = username;
         this.albumTitle = albumTitle;
         this.artist = artist;
@@ -31,7 +31,7 @@ public class Review {
         return artist;
     }
 
-    public int getRating() {
+    public double getRating() {
         return rating;
     }
 

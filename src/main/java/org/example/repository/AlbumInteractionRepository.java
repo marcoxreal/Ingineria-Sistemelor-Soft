@@ -90,7 +90,7 @@ public class AlbumInteractionRepository {
         }
     }
 
-    public void saveReview(int userId, Album album, int rating, String reviewText) {
+    public void saveReview(int userId, Album album, double rating, String reviewText) {
         int albumId = saveAlbum(album);
         markListened(userId, album);
 
@@ -108,7 +108,7 @@ public class AlbumInteractionRepository {
 
             statement.setInt(1, userId);
             statement.setInt(2, albumId);
-            statement.setInt(3, rating);
+            statement.setDouble(3, rating);
             statement.setString(4, reviewText);
             statement.executeUpdate();
         } catch (SQLException e) {
@@ -186,7 +186,7 @@ public class AlbumInteractionRepository {
                         rs.getString("username"),
                         rs.getString("title"),
                         rs.getString("artist"),
-                        rs.getInt("rating"),
+                        rs.getDouble("rating"),
                         rs.getString("review_text"),
                         toLocalDateTime(rs.getTimestamp("updated_at"))
                 ));
@@ -194,6 +194,39 @@ public class AlbumInteractionRepository {
             return reviews;
         } catch (SQLException e) {
             throw new RuntimeException("Error loading reviews", e);
+        }
+    }
+
+    public Review getUserReviewForAlbum(int userId, Album album) {
+        int albumId = saveAlbum(album);
+        String sql = """
+                SELECT u.username, a.title, a.artist, r.rating, r.review_text, r.updated_at
+                FROM album_reviews r
+                JOIN users u ON u.id = r.user_id
+                JOIN albums a ON a.id = r.album_id
+                WHERE r.user_id = ? AND r.album_id = ?
+                """;
+
+        try (Connection connection = getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setInt(1, userId);
+            statement.setInt(2, albumId);
+            ResultSet rs = statement.executeQuery();
+
+            if (rs.next()) {
+                return new Review(
+                        rs.getString("username"),
+                        rs.getString("title"),
+                        rs.getString("artist"),
+                        rs.getDouble("rating"),
+                        rs.getString("review_text"),
+                        toLocalDateTime(rs.getTimestamp("updated_at"))
+                );
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException("Error loading user review", e);
         }
     }
 
@@ -349,7 +382,7 @@ public class AlbumInteractionRepository {
                     id SERIAL PRIMARY KEY,
                     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
                     album_id INTEGER NOT NULL REFERENCES albums(id) ON DELETE CASCADE,
-                    rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+                    rating REAL NOT NULL CHECK (rating BETWEEN 0.5 AND 5.0),
                     review_text TEXT,
                     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

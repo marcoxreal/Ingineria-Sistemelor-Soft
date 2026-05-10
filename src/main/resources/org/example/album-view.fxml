@@ -1,12 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.util.*?>
 <?import javafx.scene.*?>
 <?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 
-<?import javafx.scene.image.ImageView?>
 <BorderPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
             fx:controller="org.example.controller.AlbumController"
@@ -43,8 +41,12 @@
             <VBox spacing="8" styleClass="review-box">
                 <Label text="Rate and review" styleClass="section-title-label"/>
                 <HBox alignment="CENTER_LEFT" spacing="8">
-                    <Label text="Rating"/>
-                    <Spinner fx:id="ratingSpinner" editable="true" prefWidth="80"/>
+                    <Label text="Your Rating:"/>
+                    <ImageView fx:id="star1" onMouseClicked="#handleStarClick" styleClass="star-icon"/>
+                    <ImageView fx:id="star2" onMouseClicked="#handleStarClick" styleClass="star-icon"/>
+                    <ImageView fx:id="star3" onMouseClicked="#handleStarClick" styleClass="star-icon"/>
+                    <ImageView fx:id="star4" onMouseClicked="#handleStarClick" styleClass="star-icon"/>
+                    <ImageView fx:id="star5" onMouseClicked="#handleStarClick" styleClass="star-icon"/>
                     <Button text="Submit Review" onAction="#handleSubmitReview"/>
                 </HBox>
                 <TextArea fx:id="reviewTextArea"
