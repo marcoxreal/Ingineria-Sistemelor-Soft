@@ -6,12 +6,14 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.TilePane;
+import javafx.scene.layout.VBox;
 import org.example.domain.Album;
 import org.example.domain.User;
 import org.example.service.Service;
 import org.example.utils.AlbumCardFactory;
 import org.example.utils.AppContext;
 import org.example.utils.SceneManager;
+import org.example.utils.Logger;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,10 +23,23 @@ public class HomeController {
     @FXML private TextField searchBar;
     @FXML private TextField userSearchBar;
 
-    @FXML
-    private TilePane albumGrid;
+    @FXML private TilePane albumGrid; // This will be for search results
 
-    private ObservableList<Album> allAlbums;
+    // New FXML elements for sections
+    @FXML private VBox recentBigReleasesSection;
+    @FXML private Label recentBigReleasesTitle;
+    @FXML private TilePane recentBigReleasesGrid;
+
+    @FXML private VBox bigDebutAlbumsSection;
+    @FXML private Label bigDebutAlbumsTitle;
+    @FXML private TilePane bigDebutAlbumsGrid;
+
+    @FXML private VBox developersPickSection;
+    @FXML private Label developersPickTitle;
+    @FXML private TilePane developersPickGrid;
+
+
+    private ObservableList<Album> allAlbums; // This will now hold combined data for initial display or search context
 
     private Service service;
 
@@ -42,43 +57,127 @@ public class HomeController {
             pause.setOnFinished(e -> handleSearch());
             pause.playFromStart();
         });
-        loadMockFeed();
+        loadHomePageFeed();
     }
 
-    private void loadMockFeed() {
-        allAlbums = FXCollections.observableArrayList(
-                new Album(null, "local:to-pimp-a-butterfly:kendrick-lamar", "To Pimp a Butterfly", "Kendrick Lamar", null, "Album", ""),
-                new Album(null, "local:in-rainbows:radiohead", "In Rainbows", "Radiohead", null, "Album", "https://upload.wikimedia.org/wikipedia/en/2/2e/In_Rainbows_Official_Cover.jpg"),
-                new Album(null, "local:rust-in-peace:megadeth", "Rust In Peace", "Megadeth", null, "Album", ""),
-                new Album(null, "local:master-of-puppets:metallica", "Master of Puppets", "Metallica", null, "Album", ""),
-                new Album(null, "local:blonde:frank-ocean", "Blonde", "Frank Ocean", null, "Album", ""),
-                new Album(null, "local:currents:tame-impala", "Currents", "Tame Impala", null, "Album", "")
-        );
+    private void loadHomePageFeed() {
+        // Clear any mock data
+        if (allAlbums != null) {
+            allAlbums.clear();
+        } else {
+            allAlbums = FXCollections.observableArrayList();
+        }
 
-        renderAlbums(allAlbums);
+        // Load Recent Big Releases
+        loadRecentBigReleases();
+
+        // Load Big Debut Albums (currently a placeholder)
+        loadBigDebutAlbums();
+
+        // Load Developer's Pick
+        loadDevelopersPick();
     }
 
-    private void renderAlbums(ObservableList<Album> albums) {
-        albumGrid.getChildren().clear();
+    private void loadRecentBigReleases() {
+        Thread thread = new Thread(() -> {
+            try {
+                List<Album> albums = service.getRecentBigReleases();
+                Platform.runLater(() -> {
+                    renderAlbums(recentBigReleasesGrid, FXCollections.observableArrayList(albums));
+                    if (!albums.isEmpty()) {
+                        recentBigReleasesSection.setVisible(true);
+                        recentBigReleasesSection.setManaged(true);
+                    } else {
+                        recentBigReleasesSection.setVisible(false);
+                        recentBigReleasesSection.setManaged(false);
+                    }
+                });
+            } catch (Exception e) {
+                Logger.error("Error loading recent big releases: " + e.getMessage());
+                Platform.runLater(() -> {
+                    recentBigReleasesSection.setVisible(false);
+                    recentBigReleasesSection.setManaged(false);
+                });
+            }
+        }, "recent-releases-loader");
+        thread.setDaemon(true);
+        thread.start();
+    }
 
+    private void loadBigDebutAlbums() {
+        // This section is currently a placeholder as the service method returns an empty list.
+        // Once the service method is implemented, this can be uncommented and used.
+        Platform.runLater(() -> {
+            bigDebutAlbumsSection.setVisible(false);
+            bigDebutAlbumsSection.setManaged(false);
+        });
+        /*
+        Thread thread = new Thread(() -> {
+            try {
+                List<Album> albums = service.getBigDebutAlbums();
+                Platform.runLater(() -> {
+                    renderAlbums(bigDebutAlbumsGrid, FXCollections.observableArrayList(albums));
+                    if (!albums.isEmpty()) {
+                        bigDebutAlbumsSection.setVisible(true);
+                        bigDebutAlbumsSection.setManaged(true);
+                    } else {
+                        bigDebutAlbumsSection.setVisible(false);
+                        bigDebutAlbumsSection.setManaged(false);
+                    }
+                });
+            } catch (Exception e) {
+                Logger.error("Error loading big debut albums: " + e.getMessage());
+                Platform.runLater(() -> {
+                    bigDebutAlbumsSection.setVisible(false);
+                    bigDebutAlbumsSection.setManaged(false);
+                });
+            }
+        }, "debut-albums-loader");
+        thread.setDaemon(true);
+        thread.start();
+        */
+    }
+
+    private void loadDevelopersPick() {
+        Thread thread = new Thread(() -> {
+            try {
+                List<Album> albums = service.getDevelopersPickAlbums();
+                Platform.runLater(() -> {
+                    renderAlbums(developersPickGrid, FXCollections.observableArrayList(albums));
+                    if (!albums.isEmpty()) {
+                        developersPickSection.setVisible(true);
+                        developersPickSection.setManaged(true);
+                    } else {
+                        developersPickSection.setVisible(false);
+                        developersPickSection.setManaged(false);
+                    }
+                });
+            } catch (Exception e) {
+                Logger.error("Error loading developer's pick albums: " + e.getMessage());
+                Platform.runLater(() -> {
+                    developersPickSection.setVisible(false);
+                    developersPickSection.setManaged(false);
+                });
+            }
+        }, "developers-pick-loader");
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+
+    private void renderAlbums(TilePane targetGrid, ObservableList<Album> albums) {
+        targetGrid.getChildren().clear();
         for (Album album : albums) {
             if (album != null) {
-                albumGrid.getChildren().add(AlbumCardFactory.createAlbumCard(album));
+                targetGrid.getChildren().add(AlbumCardFactory.createAlbumCard(album));
             }
         }
     }
 
     public List<Album> searchAlbums(String query) {
-
-        final String finalQuery = query == null ? "" : query.toLowerCase();
-
-        return allAlbums.stream()
-                .filter(album ->
-                        AlbumCardFactory.displayText(album.getTitle(), "").toLowerCase().contains(finalQuery)
-                                ||
-                                AlbumCardFactory.displayText(album.getArtist(), "").toLowerCase().contains(finalQuery)
-                )
-                .toList();
+        // This method is primarily for local filtering if allAlbums contains enough data,
+        // but with API calls, handleSearch will directly use the service.
+        return List.of(); // No longer used for primary search
     }
 
     public void startSearch(String query) {
@@ -128,32 +227,44 @@ public class HomeController {
 
     @FXML
     public void handleSearch() {
-
         String query = searchBar.getText();
         int requestVersion = searchVersion.incrementAndGet();
 
         if (query == null || query.isBlank()) {
-            renderAlbums(allAlbums);
+            // If search bar is empty, show the home page feed again
+            albumGrid.getChildren().clear(); // Clear search results grid
+            loadHomePageFeed(); // Reload the categorized feed
             return;
         }
 
         if (service == null) {
-            renderAlbums(FXCollections.observableArrayList(searchAlbums(query)));
+            // This case should ideally not happen if service is initialized
+            renderAlbums(albumGrid, FXCollections.observableArrayList());
             return;
         }
+
+        // Hide categorized sections when searching
+        recentBigReleasesSection.setVisible(false);
+        recentBigReleasesSection.setManaged(false);
+        bigDebutAlbumsSection.setVisible(false);
+        bigDebutAlbumsSection.setManaged(false);
+        developersPickSection.setVisible(false);
+        developersPickSection.setManaged(false);
+
 
         Thread searchThread = new Thread(() -> {
             List<Album> searchResults;
             try {
                 searchResults = service.searchAlbums(query);
             } catch (Exception e) {
+                Logger.error("Error during album search: " + e.getMessage());
                 searchResults = List.of();
             }
             final List<Album> results = searchResults;
 
             Platform.runLater(() -> {
                 if (requestVersion == searchVersion.get()) {
-                    renderAlbums(FXCollections.observableArrayList(results));
+                    renderAlbums(albumGrid, FXCollections.observableArrayList(results));
                 }
             });
         }, "album-search");

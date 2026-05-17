@@ -10,6 +10,8 @@ import org.example.repository.FollowRepository;
 import org.example.repository.Repository;
 import org.example.repository.UserRepository;
 
+import java.io.IOException;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.StreamSupport;
@@ -229,80 +231,98 @@ public class Service implements IService{
     }
 
     public List<Album> searchAlbums(String query) {
-
-        List<Album> albums = new ArrayList<>();
-
         try {
             if (query == null || query.isBlank()) {
-                return albums;
+                return List.of();
             }
 
             String q = query.trim();
-
             var response = musicBrainzClient.searchAlbums(q);
-            Map<String, String> artworkByAlbum = getArtworkByAlbum(q);
+            return processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), q);
+        } catch (IOException | InterruptedException e) {
+            Logger.error("Error searching albums: " + e.getMessage());
+            return List.of();
+        }
+    }
 
-            List<ReleaseGroup> groups =
-                    (response != null && response.getReleaseGroups() != null)
-                            ? response.getReleaseGroups()
-                            : List.of();
+    public List<Album> getRecentBigReleases() {
+        try {
+            LocalDate endDate = LocalDate.now();
+            LocalDate startDate = endDate.minusDays(90); // Last 3 months
+            var response = musicBrainzClient.searchAlbumsByDate(startDate, endDate, 20); // Limit to 20 for a section
+            return processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), null);
+        } catch (IOException | InterruptedException e) {
+            Logger.error("Error fetching recent big releases: " + e.getMessage());
+            return List.of();
+        }
+    }
 
-            Set<String> seen = new HashSet<>();
+    public List<Album> getDevelopersPickAlbums() {
+        List<Album> developerPicks = new ArrayList<>();
+        List<String> artists = List.of("Alice in Chains", "Megadeth", "Soundgarden", "Metallica", "Iron Maiden"); // Example artists
 
-            for (ReleaseGroup group : groups) {
+        for (String artist : artists) {
+            try {
+                var response = musicBrainzClient.searchAlbumsByArtist(artist, 5); // Get a few albums per artist
+                developerPicks.addAll(processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), artist));
+            } catch (IOException | InterruptedException e) {
+                Logger.error("Error fetching developer's pick albums for artist " + artist + ": " + e.getMessage());
+            }
+        }
+        return developerPicks.stream().limit(20).toList(); // Limit total developer picks
+    }
 
-                if (group == null)
-                    continue;
+    public List<Album> getBigDebutAlbums() {
+        // This is a more complex query and might require additional logic or a different API.
+        // For now, I'll return an empty list or a placeholder.
+        // A proper implementation would involve:
+        // 1. Searching for artists.
+        // 2. For each artist, finding their earliest "Album" release.
+        // This is beyond the scope of a quick fix and might hit API rate limits quickly.
+        // Returning an empty list for now.
+        return List.of();
+    }
 
-                if (!isCleanAlbumGroup(group)) {
-                    continue;
-                }
+    private List<Album> processReleaseGroups(List<ReleaseGroup> groups, String query) throws IOException, InterruptedException {
+        List<Album> albums = new ArrayList<>();
+        Map<String, String> artworkByAlbum = (query != null && !query.isBlank()) ? getArtworkByAlbum(query) : Map.of();
+        Set<String> seen = new HashSet<>();
 
-                String title = group.getTitle();
-                if (title == null)
-                    continue;
+        for (ReleaseGroup group : groups) {
+            if (group == null) continue;
+            if (!isCleanAlbumGroup(group)) continue;
 
-                String artist = getArtistName(group);
+            String title = group.getTitle();
+            if (title == null) continue;
 
-                if (!matchesAlbumSearch(q, title, artist)) {
-                    continue;
-                }
+            String artist = getArtistName(group);
 
-                if (!seen.add((title + "|" + artist).toLowerCase(Locale.ROOT))) {
-                    continue;
-                }
-
-                String coverUrl = artworkClient.findCover(artworkByAlbum, title, artist);
-                if (coverUrl.isBlank()) {
-                    coverUrl = getCoverArtArchiveUrl(group);
-                }
-
-                albums.add(new Album(
-                        null,
-                        group.getId(),
-                        title,
-                        artist,
-                        null,
-                        "Album",
-                        coverUrl
-                ));
+            if (query != null && !query.isBlank() && !matchesAlbumSearch(query, title, artist)) {
+                continue;
             }
 
-        } catch (Exception e) {
-            e.printStackTrace();
+            if (!seen.add((title + "|" + artist).toLowerCase(Locale.ROOT))) {
+                continue;
+            }
+
+            String coverUrl = artworkClient.findCover(artworkByAlbum, title, artist);
+            if (coverUrl.isBlank()) {
+                coverUrl = getCoverArtArchiveUrl(group);
+            }
+
+            albums.add(new Album(
+                    null,
+                    group.getId(),
+                    title,
+                    artist,
+                    null,
+                    "Album",
+                    coverUrl
+            ));
         }
-
-        String normalizedQuery = normalize(query);
-        long artistMatchCount = albums.stream()
-                .filter(album -> normalize(album.getArtist()).contains(normalizedQuery))
-                .count();
-
-        if (artistMatchCount >= 3) {
-            albums.removeIf(album -> !normalize(album.getArtist()).contains(normalizedQuery));
-        }
-
-        return albums.stream().limit(40).toList();
+        return albums;
     }
+
 
     private Map<String, String> getArtworkByAlbum(String query) {
         try {

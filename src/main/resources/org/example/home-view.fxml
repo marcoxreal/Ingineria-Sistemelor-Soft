@@ -21,16 +21,56 @@
 
     <center>
         <ScrollPane fitToWidth="true">
-            <TilePane fx:id="albumGrid"
-                      hgap="15"
-                      vgap="15"
-                      prefColumns="5">
+            <VBox spacing="20" alignment="TOP_LEFT" styleClass="home-content">
+                <!-- Recent Big Releases Section -->
+                <VBox fx:id="recentBigReleasesSection" spacing="10" visible="false" managed="false">
+                    <Label fx:id="recentBigReleasesTitle" text="Recent Big Releases" styleClass="section-title"/>
+                    <TilePane fx:id="recentBigReleasesGrid"
+                              hgap="15"
+                              vgap="15"
+                              prefColumns="5">
+                        <padding>
+                            <Insets top="10" right="20" bottom="10" left="20"/>
+                        </padding>
+                    </TilePane>
+                </VBox>
 
-                <padding>
-                    <Insets top="20" right="20" bottom="20" left="20"/>
-                </padding>
+                <!-- Big Debut Albums Section -->
+                <VBox fx:id="bigDebutAlbumsSection" spacing="10" visible="false" managed="false">
+                    <Label fx:id="bigDebutAlbumsTitle" text="Big Debut Albums" styleClass="section-title"/>
+                    <TilePane fx:id="bigDebutAlbumsGrid"
+                              hgap="15"
+                              vgap="15"
+                              prefColumns="5">
+                        <padding>
+                            <Insets top="10" right="20" bottom="10" left="20"/>
+                        </padding>
+                    </TilePane>
+                </VBox>
 
-            </TilePane>
+                <!-- Developer's Pick Section -->
+                <VBox fx:id="developersPickSection" spacing="10" visible="false" managed="false">
+                    <Label fx:id="developersPickTitle" text="Developer's Pick" styleClass="section-title"/>
+                    <TilePane fx:id="developersPickGrid"
+                              hgap="15"
+                              vgap="15"
+                              prefColumns="5">
+                        <padding>
+                            <Insets top="10" right="20" bottom="10" left="20"/>
+                        </padding>
+                    </TilePane>
+                </VBox>
+
+                <!-- Search Results Grid (original albumGrid) -->
+                <TilePane fx:id="albumGrid"
+                          hgap="15"
+                          vgap="15"
+                          prefColumns="5">
+                    <padding>
+                        <Insets top="20" right="20" bottom="20" left="20"/>
+                    </padding>
+                </TilePane>
+            </VBox>
         </ScrollPane>
     </center>
 

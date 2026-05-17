@@ -9,6 +9,8 @@ import java.net.http.*;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class MusicBrainzClient {
 
@@ -32,13 +34,32 @@ public class MusicBrainzClient {
                 "(artist:\"" + escapeQuery(query) + "\" AND primarytype:album) OR "
                         + "(releasegroup:\"" + escapeQuery(query) + "\" AND primarytype:album)";
 
+        return executeSearch(musicBrainzQuery, 100);
+    }
+
+    public MusicBrainzResponse searchAlbumsByDate(LocalDate startDate, LocalDate endDate, int limit)
+            throws IOException, InterruptedException {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE;
+        String dateRange = "[" + startDate.format(formatter) + " TO " + endDate.format(formatter) + "]";
+        String musicBrainzQuery = "date:" + dateRange + " AND primarytype:album";
+        return executeSearch(musicBrainzQuery, limit);
+    }
+
+    public MusicBrainzResponse searchAlbumsByArtist(String artistName, int limit)
+            throws IOException, InterruptedException {
+        String musicBrainzQuery = "artist:\"" + escapeQuery(artistName) + "\" AND primarytype:album";
+        return executeSearch(musicBrainzQuery, limit);
+    }
+
+    private MusicBrainzResponse executeSearch(String musicBrainzQuery, int limit)
+            throws IOException, InterruptedException {
         String encoded =
                 URLEncoder.encode(musicBrainzQuery, StandardCharsets.UTF_8);
 
         String url =
                 BASE_URL +
                         "?query=" + encoded +
-                        "&limit=100" +
+                        "&limit=" + limit +
                         "&fmt=json";
 
         HttpRequest request = HttpRequest.newBuilder()
