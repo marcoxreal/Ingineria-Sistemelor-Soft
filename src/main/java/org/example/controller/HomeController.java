@@ -41,6 +41,7 @@ public class HomeController {
 
     private javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.millis(400));
     private final AtomicInteger searchVersion = new AtomicInteger();
+    private final AtomicInteger homeFeedVersion = new AtomicInteger();
     private boolean suppressSearchListener;
 
     public void initialize() {
@@ -57,60 +58,82 @@ public class HomeController {
     }
 
     private void loadHomePageFeed() {
+        int feedVersion = homeFeedVersion.incrementAndGet();
         albumGrid.getChildren().clear();
         setSectionVisible(recentBigReleasesSection, true);
         setSectionVisible(bigDebutAlbumsSection, true);
         setSectionVisible(developersPickSection, true);
-        loadRecentBigReleases();
-        loadBigDebutAlbums();
-        loadDevelopersPick();
+        loadRecentBigReleases(feedVersion);
+        loadBigDebutAlbums(feedVersion);
+        loadDevelopersPick(feedVersion);
     }
 
-    private void loadRecentBigReleases() {
+    private void loadRecentBigReleases(int feedVersion) {
         Thread thread = new Thread(() -> {
             try {
                 List<Album> albums = service.getRecentBigReleases();
                 Platform.runLater(() -> {
+                    if (!canRenderHomeFeed(feedVersion)) {
+                        return;
+                    }
                     renderAlbums(recentBigReleasesGrid, FXCollections.observableArrayList(albums));
                     setSectionVisible(recentBigReleasesSection, !albums.isEmpty());
                 });
             } catch (Exception e) {
                 Logger.error("Error loading recent big releases: " + e.getMessage());
-                Platform.runLater(() -> setSectionVisible(recentBigReleasesSection, false));
+                Platform.runLater(() -> {
+                    if (canRenderHomeFeed(feedVersion)) {
+                        setSectionVisible(recentBigReleasesSection, false);
+                    }
+                });
             }
         }, "recent-releases-loader");
         thread.setDaemon(true);
         thread.start();
     }
 
-    private void loadBigDebutAlbums() {
+    private void loadBigDebutAlbums(int feedVersion) {
         Thread thread = new Thread(() -> {
             try {
                 List<Album> albums = service.getBigDebutAlbums();
                 Platform.runLater(() -> {
+                    if (!canRenderHomeFeed(feedVersion)) {
+                        return;
+                    }
                     renderAlbums(bigDebutAlbumsGrid, FXCollections.observableArrayList(albums));
                     setSectionVisible(bigDebutAlbumsSection, !albums.isEmpty());
                 });
             } catch (Exception e) {
                 Logger.error("Error loading big debut albums: " + e.getMessage());
-                Platform.runLater(() -> setSectionVisible(bigDebutAlbumsSection, false));
+                Platform.runLater(() -> {
+                    if (canRenderHomeFeed(feedVersion)) {
+                        setSectionVisible(bigDebutAlbumsSection, false);
+                    }
+                });
             }
         }, "debut-albums-loader");
         thread.setDaemon(true);
         thread.start();
     }
 
-    private void loadDevelopersPick() {
+    private void loadDevelopersPick(int feedVersion) {
         Thread thread = new Thread(() -> {
             try {
                 List<Album> albums = service.getDevelopersPickAlbums();
                 Platform.runLater(() -> {
+                    if (!canRenderHomeFeed(feedVersion)) {
+                        return;
+                    }
                     renderAlbums(developersPickGrid, FXCollections.observableArrayList(albums));
                     setSectionVisible(developersPickSection, !albums.isEmpty());
                 });
             } catch (Exception e) {
                 Logger.error("Error loading developer's pick albums: " + e.getMessage());
-                Platform.runLater(() -> setSectionVisible(developersPickSection, false));
+                Platform.runLater(() -> {
+                    if (canRenderHomeFeed(feedVersion)) {
+                        setSectionVisible(developersPickSection, false);
+                    }
+                });
             }
         }, "developers-pick-loader");
         thread.setDaemon(true);
@@ -130,6 +153,11 @@ public class HomeController {
     private void setSectionVisible(VBox section, boolean visible) {
         section.setVisible(visible);
         section.setManaged(visible);
+    }
+
+    private boolean canRenderHomeFeed(int feedVersion) {
+        return feedVersion == homeFeedVersion.get()
+                && (searchBar.getText() == null || searchBar.getText().isBlank());
     }
 
     public void startSearch(String query) {
@@ -186,6 +214,8 @@ public class HomeController {
             loadHomePageFeed();
             return;
         }
+
+        homeFeedVersion.incrementAndGet();
 
         if (service == null) {
             renderAlbums(albumGrid, FXCollections.observableArrayList());

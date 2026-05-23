@@ -166,6 +166,17 @@ public class Service implements IService{
                 .toList();
     }
 
+    public void updateProfilePicture(User user, String pfpUrl) {
+        requireUser(user);
+        if (!(userRepository instanceof UserRepository concreteRepository)) {
+            throw new IllegalStateException("Profile pictures are not available for this user repository.");
+        }
+
+        String cleanUrl = pfpUrl == null || pfpUrl.isBlank() ? null : pfpUrl.trim();
+        concreteRepository.updateProfilePicture(user.getId(), cleanUrl);
+        user.setPfpUrl(cleanUrl);
+    }
+
     public void markAlbumListened(User user, Album album) {
         requireUser(user);
         albumInteractionRepository.markListened(user.getId(), album);
@@ -245,6 +256,10 @@ public class Service implements IService{
                 if (matchesAlbumSearch(q, album.getTitle(), album.getArtist())) {
                     candidates.add(new RankedAlbum(album, 60, order++));
                 }
+            }
+
+            for (Album album : getCanonicalSearchAlbums(q)) {
+                candidates.add(new RankedAlbum(album, 120, order++));
             }
 
             for (Album album : processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), q)) {
@@ -362,6 +377,55 @@ public class Service implements IService{
         }
 
         return albums;
+    }
+
+    private List<Album> getCanonicalSearchAlbums(String query) {
+        String normalizedQuery = normalize(query);
+        List<AlbumPick> picks = new ArrayList<>();
+
+        if ("alice in chains".contains(normalizedQuery) || normalizedQuery.contains("alice in chains")) {
+            picks.addAll(List.of(
+                    new AlbumPick("Dirt", "Alice in Chains"),
+                    new AlbumPick("Facelift", "Alice in Chains"),
+                    new AlbumPick("Alice in Chains", "Alice in Chains"),
+                    new AlbumPick("Black Gives Way to Blue", "Alice in Chains"),
+                    new AlbumPick("The Devil Put Dinosaurs Here", "Alice in Chains"),
+                    new AlbumPick("Rainier Fog", "Alice in Chains")
+            ));
+        }
+
+        if ("megadeth".contains(normalizedQuery) || normalizedQuery.contains("megadeth")) {
+            picks.addAll(List.of(
+                    new AlbumPick("Rust in Peace", "Megadeth"),
+                    new AlbumPick("Peace Sells... But Who's Buying?", "Megadeth"),
+                    new AlbumPick("Countdown to Extinction", "Megadeth"),
+                    new AlbumPick("Youthanasia", "Megadeth"),
+                    new AlbumPick("Dystopia", "Megadeth")
+            ));
+        }
+
+        if ("soundgarden".contains(normalizedQuery) || normalizedQuery.contains("soundgarden")) {
+            picks.addAll(List.of(
+                    new AlbumPick("Superunknown", "Soundgarden"),
+                    new AlbumPick("Badmotorfinger", "Soundgarden"),
+                    new AlbumPick("Down on the Upside", "Soundgarden")
+            ));
+        }
+
+        if ("metallica".contains(normalizedQuery) || normalizedQuery.contains("metallica")) {
+            picks.addAll(List.of(
+                    new AlbumPick("Master of Puppets", "Metallica"),
+                    new AlbumPick("Ride the Lightning", "Metallica"),
+                    new AlbumPick("Metallica", "Metallica"),
+                    new AlbumPick("...And Justice for All", "Metallica")
+            ));
+        }
+
+        if (picks.isEmpty()) {
+            return List.of();
+        }
+
+        return resolveCuratedAlbums(picks);
     }
 
     private Optional<Album> findBestAlbum(AlbumPick pick) throws IOException, InterruptedException {

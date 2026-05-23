@@ -164,7 +164,7 @@ public class AlbumInteractionRepository {
     public List<Review> getRecentReviews(Album album, int limit) {
         int albumId = saveAlbum(album);
         String sql = """
-                SELECT u.username, a.title, a.artist, r.rating, r.review_text, r.updated_at
+                SELECT u.username, u.pfp_url, a.title, a.artist, r.rating, r.review_text, r.updated_at
                 FROM album_reviews r
                 JOIN users u ON u.id = r.user_id
                 JOIN albums a ON a.id = r.album_id
@@ -184,6 +184,7 @@ public class AlbumInteractionRepository {
             while (rs.next()) {
                 reviews.add(new Review(
                         rs.getString("username"),
+                        rs.getString("pfp_url"),
                         rs.getString("title"),
                         rs.getString("artist"),
                         rs.getDouble("rating"),
@@ -200,7 +201,7 @@ public class AlbumInteractionRepository {
     public Review getUserReviewForAlbum(int userId, Album album) {
         int albumId = saveAlbum(album);
         String sql = """
-                SELECT u.username, a.title, a.artist, r.rating, r.review_text, r.updated_at
+                SELECT u.username, u.pfp_url, a.title, a.artist, r.rating, r.review_text, r.updated_at
                 FROM album_reviews r
                 JOIN users u ON u.id = r.user_id
                 JOIN albums a ON a.id = r.album_id
@@ -217,6 +218,7 @@ public class AlbumInteractionRepository {
             if (rs.next()) {
                 return new Review(
                         rs.getString("username"),
+                        rs.getString("pfp_url"),
                         rs.getString("title"),
                         rs.getString("artist"),
                         rs.getDouble("rating"),

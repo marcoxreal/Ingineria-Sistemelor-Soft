@@ -4,11 +4,15 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import org.example.domain.Album;
 import org.example.domain.Review;
 import org.example.service.Service;
@@ -28,7 +32,7 @@ public class AlbumController {
     @FXML private TextField searchBar;
     @FXML private Label listenedLabel;
     @FXML private TextArea reviewTextArea;
-    @FXML private ListView<String> reviewsList;
+    @FXML private ListView<Review> reviewsList;
 
     @FXML private ImageView star1;
     @FXML private ImageView star2;
@@ -49,6 +53,7 @@ public class AlbumController {
         this.service = AppContext.service;
         loadStarImages();
         updateStarVisuals(); // Initialize stars to empty
+        reviewsList.setCellFactory(list -> new ReviewCell());
     }
 
     private void loadStarImages() {
@@ -207,17 +212,11 @@ public class AlbumController {
 
         reviewsList.getItems().clear();
         for (Review review : service.getRecentReviews(currentAlbum)) {
-            reviewsList.getItems().add(
-                    review.getUsername()
-                            + " rated " + String.format("%.1f", review.getRating()) + "/5"
-                            + (review.getReviewText() == null || review.getReviewText().isBlank()
-                            ? ""
-                            : ": " + review.getReviewText())
-            );
+            reviewsList.getItems().add(review);
         }
 
         if (reviewsList.getItems().isEmpty()) {
-            reviewsList.getItems().add("No reviews yet.");
+            reviewsList.setPlaceholder(new Label("No reviews yet."));
         }
     }
 
@@ -226,5 +225,85 @@ public class AlbumController {
         alert.setHeaderText("Album action");
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private static class ReviewCell extends ListCell<Review> {
+        @Override
+        protected void updateItem(Review review, boolean empty) {
+            super.updateItem(review, empty);
+
+            if (empty || review == null) {
+                setText(null);
+                setGraphic(null);
+                return;
+            }
+
+            ImageView avatar = new ImageView();
+            avatar.setFitWidth(42);
+            avatar.setFitHeight(42);
+            avatar.setPreserveRatio(false);
+            avatar.getStyleClass().add("review-avatar");
+
+            StackPane avatarFrame = new StackPane();
+            avatarFrame.getStyleClass().add("review-avatar-frame");
+            avatarFrame.setMinSize(42, 42);
+            avatarFrame.setPrefSize(42, 42);
+            avatarFrame.setMaxSize(42, 42);
+
+            if (review.getUserPfpUrl() != null && !review.getUserPfpUrl().isBlank()) {
+                avatar.setImage(ImageCache.get(review.getUserPfpUrl()));
+                if (avatar.getImage() != null) {
+                    avatarFrame.getChildren().add(avatar);
+                }
+            }
+
+            if (avatarFrame.getChildren().isEmpty()) {
+                Label initial = new Label(review.getUsername() == null || review.getUsername().isBlank()
+                        ? "?"
+                        : review.getUsername().substring(0, 1).toUpperCase());
+                initial.getStyleClass().add("review-avatar-initial");
+                avatarFrame.getChildren().add(initial);
+            }
+
+            Label username = new Label(review.getUsername());
+            username.getStyleClass().add("review-username");
+
+            Label stars = new Label(formatStars(review.getRating()) + "  " + String.format("%.1f", review.getRating()));
+            stars.getStyleClass().add("review-stars");
+
+            Label body = new Label(review.getReviewText() == null || review.getReviewText().isBlank()
+                    ? "No written review."
+                    : review.getReviewText());
+            body.setWrapText(true);
+            body.getStyleClass().add("review-body");
+
+            HBox header = new HBox(8, username, stars);
+            header.getStyleClass().add("review-header");
+
+            VBox content = new VBox(5, header, body);
+            HBox card = new HBox(12, avatarFrame, content);
+            card.getStyleClass().add("review-card");
+
+            setText(null);
+            setGraphic(card);
+        }
+
+        private static String formatStars(double rating) {
+            StringBuilder builder = new StringBuilder();
+            int fullStars = (int) Math.floor(rating);
+            boolean halfStar = rating - fullStars >= 0.5;
+
+            for (int i = 1; i <= 5; i++) {
+                if (i <= fullStars) {
+                    builder.append("★");
+                } else if (i == fullStars + 1 && halfStar) {
+                    builder.append("½");
+                } else {
+                    builder.append("☆");
+                }
+            }
+
+            return builder.toString();
+        }
     }
 }

@@ -34,6 +34,10 @@
                         <Label fx:id="followingLabel" styleClass="stat-label"/>
                         <Label fx:id="listenedLabel" styleClass="stat-label"/>
                     </HBox>
+                    <HBox fx:id="profilePictureEditor" alignment="CENTER_LEFT" spacing="8">
+                        <TextField fx:id="profilePictureUrlField" promptText="Profile picture URL" HBox.hgrow="ALWAYS"/>
+                        <Button text="Save Photo" onAction="#handleSaveProfilePicture"/>
+                    </HBox>
                 </VBox>
 
                 <Button fx:id="followButton" text="Follow" onAction="#handleFollowToggle"/>

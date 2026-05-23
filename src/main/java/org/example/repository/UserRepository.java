@@ -195,6 +195,20 @@ public class UserRepository implements IUserRepo {
         }
     }
 
+    public void updateProfilePicture(int userId, String pfpUrl) {
+        String sql = "UPDATE users SET pfp_url = ? WHERE id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, pfpUrl);
+            stmt.setInt(2, userId);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating profile picture", e);
+        }
+    }
+
     // -------------------------
     // CLEAR
     // -------------------------

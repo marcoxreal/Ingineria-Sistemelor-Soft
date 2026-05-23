@@ -5,8 +5,10 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.TilePane;
 import org.example.domain.Album;
 import org.example.domain.User;
@@ -29,6 +31,8 @@ public class UserController {
     @FXML private Label profilePlaceholder;
     @FXML private Button addFavoriteButton;
     @FXML private Button followButton;
+    @FXML private HBox profilePictureEditor;
+    @FXML private TextField profilePictureUrlField;
 
     private Service service;
     private User profileUser;
@@ -91,6 +95,21 @@ public class UserController {
         }
     }
 
+    @FXML
+    public void handleSaveProfilePicture() {
+        if (!isOwnProfile()) {
+            return;
+        }
+
+        try {
+            service.updateProfilePicture(AppContext.currentUser, profilePictureUrlField.getText());
+            profileUser.setPfpUrl(AppContext.currentUser.getPfpUrl());
+            renderProfileImage();
+        } catch (Exception e) {
+            showError(e.getMessage());
+        }
+    }
+
     private void renderUser() {
         if (profileUser == null) {
             return;
@@ -100,18 +119,7 @@ public class UserController {
         emailLabel.setText(displayText(profileUser.getEmail(), "No email listed"));
         activityLabel.setText("");
 
-        if (profileUser.getPfpUrl() != null && !profileUser.getPfpUrl().isBlank()) {
-            try {
-                profileImage.setImage(new Image(profileUser.getPfpUrl(), true));
-                profilePlaceholder.setVisible(false);
-            } catch (IllegalArgumentException e) {
-                profileImage.setImage(null);
-                profilePlaceholder.setVisible(true);
-            }
-        } else {
-            profileImage.setImage(null);
-            profilePlaceholder.setVisible(true);
-        }
+        renderProfileImage();
 
         renderFollowState();
         renderUserStats();
@@ -176,6 +184,25 @@ public class UserController {
         boolean ownProfile = isOwnProfile();
         addFavoriteButton.setVisible(ownProfile);
         addFavoriteButton.setManaged(ownProfile);
+        profilePictureEditor.setVisible(ownProfile);
+        profilePictureEditor.setManaged(ownProfile);
+    }
+
+    private void renderProfileImage() {
+        profilePictureUrlField.setText(displayText(profileUser.getPfpUrl(), ""));
+
+        if (profileUser.getPfpUrl() != null && !profileUser.getPfpUrl().isBlank()) {
+            try {
+                profileImage.setImage(new Image(profileUser.getPfpUrl(), true));
+                profilePlaceholder.setVisible(false);
+            } catch (IllegalArgumentException e) {
+                profileImage.setImage(null);
+                profilePlaceholder.setVisible(true);
+            }
+        } else {
+            profileImage.setImage(null);
+            profilePlaceholder.setVisible(true);
+        }
     }
 
     private boolean isOwnProfile() {

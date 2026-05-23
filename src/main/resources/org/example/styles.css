@@ -215,5 +215,65 @@
     -fx-background-radius: 8;
     -fx-border-color: #d0d7de;
     -fx-border-radius: 8;
-    -fx-max-width: 520;
+    -fx-max-width: 640;
+}
+
+.list-view {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 6 2;
+}
+
+.review-card {
+    -fx-background-color: #f8fafc;
+    -fx-padding: 12;
+    -fx-background-radius: 8;
+    -fx-border-color: #dde4ec;
+    -fx-border-radius: 8;
+}
+
+.review-avatar-frame {
+    -fx-background-color: #dce6f2;
+    -fx-background-radius: 21;
+}
+
+.review-avatar {
+    -fx-background-radius: 21;
+}
+
+.review-avatar-initial {
+    -fx-font-weight: bold;
+    -fx-text-fill: #2f5f8f;
+}
+
+.review-header {
+    -fx-alignment: center-left;
+}
+
+.review-username {
+    -fx-font-weight: bold;
+    -fx-text-fill: #1f2d3d;
+}
+
+.review-stars {
+    -fx-text-fill: #d99a15;
+    -fx-font-weight: bold;
+}
+
+.review-body {
+    -fx-text-fill: #405065;
+    -fx-font-size: 13px;
+}
+
+.profile-image-frame {
+    -fx-border-color: #d8e0e9;
+    -fx-border-radius: 10;
+}
+
+#profilePictureEditor .text-field {
+    -fx-pref-width: 280;
 }

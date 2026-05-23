@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class Review {
     private final String username;
+    private final String userPfpUrl;
     private final String albumTitle;
     private final String artist;
     private final double rating;
@@ -11,7 +12,12 @@ public class Review {
     private final LocalDateTime createdAt;
 
     public Review(String username, String albumTitle, String artist, double rating, String reviewText, LocalDateTime createdAt) {
+        this(username, null, albumTitle, artist, rating, reviewText, createdAt);
+    }
+
+    public Review(String username, String userPfpUrl, String albumTitle, String artist, double rating, String reviewText, LocalDateTime createdAt) {
         this.username = username;
+        this.userPfpUrl = userPfpUrl;
         this.albumTitle = albumTitle;
         this.artist = artist;
         this.rating = rating;
@@ -21,6 +27,10 @@ public class Review {
 
     public String getUsername() {
         return username;
+    }
+
+    public String getUserPfpUrl() {
+        return userPfpUrl;
     }
 
     public String getAlbumTitle() {
