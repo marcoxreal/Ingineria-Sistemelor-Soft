@@ -11,63 +11,65 @@
 
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT" styleClass="top-bar">
-            <TextField fx:id="searchBar" promptText="Search albums or artists"/>
-            <Button text="Search" onAction="#handleSearch"/>
-            <TextField fx:id="userSearchBar" promptText="Search users"/>
-            <Button text="Find User" onAction="#handleUserSearch"/>
+            <Label text="Tuneboxd" styleClass="brand-label"/>
+            <TextField fx:id="searchBar" promptText="Search albums or artists" HBox.hgrow="ALWAYS"/>
+            <Button text="Search" onAction="#handleSearch" styleClass="primary-button"/>
+            <Region prefWidth="18"/>
+            <TextField fx:id="userSearchBar" promptText="Search users" prefWidth="180"/>
+            <Button text="Find User" onAction="#handleUserSearch" styleClass="secondary-button"/>
             <Button text="My Profile" onAction="#handleMyProfile"/>
         </HBox>
     </top>
 
     <center>
-        <ScrollPane fitToWidth="true">
+        <ScrollPane fitToWidth="true" styleClass="home-scroll">
             <VBox spacing="20" alignment="TOP_LEFT" styleClass="home-content">
-                <!-- Recent Big Releases Section -->
-                <VBox fx:id="recentBigReleasesSection" spacing="10" visible="false" managed="false">
+                <VBox fx:id="recentBigReleasesSection" spacing="10" visible="false" managed="false" styleClass="home-section">
                     <Label fx:id="recentBigReleasesTitle" text="Recent Big Releases" styleClass="section-title"/>
                     <TilePane fx:id="recentBigReleasesGrid"
                               hgap="15"
                               vgap="15"
+                              tileAlignment="TOP_LEFT"
                               prefColumns="5">
                         <padding>
-                            <Insets top="10" right="20" bottom="10" left="20"/>
+                            <Insets top="8" right="0" bottom="0" left="0"/>
                         </padding>
                     </TilePane>
                 </VBox>
 
-                <!-- Big Debut Albums Section -->
-                <VBox fx:id="bigDebutAlbumsSection" spacing="10" visible="false" managed="false">
+                <VBox fx:id="bigDebutAlbumsSection" spacing="10" visible="false" managed="false" styleClass="home-section">
                     <Label fx:id="bigDebutAlbumsTitle" text="Big Debut Albums" styleClass="section-title"/>
                     <TilePane fx:id="bigDebutAlbumsGrid"
                               hgap="15"
                               vgap="15"
+                              tileAlignment="TOP_LEFT"
                               prefColumns="5">
                         <padding>
-                            <Insets top="10" right="20" bottom="10" left="20"/>
+                            <Insets top="8" right="0" bottom="0" left="0"/>
                         </padding>
                     </TilePane>
                 </VBox>
 
-                <!-- Developer's Pick Section -->
-                <VBox fx:id="developersPickSection" spacing="10" visible="false" managed="false">
+                <VBox fx:id="developersPickSection" spacing="10" visible="false" managed="false" styleClass="home-section">
                     <Label fx:id="developersPickTitle" text="Developer's Pick" styleClass="section-title"/>
                     <TilePane fx:id="developersPickGrid"
                               hgap="15"
                               vgap="15"
+                              tileAlignment="TOP_LEFT"
                               prefColumns="5">
                         <padding>
-                            <Insets top="10" right="20" bottom="10" left="20"/>
+                            <Insets top="8" right="0" bottom="0" left="0"/>
                         </padding>
                     </TilePane>
                 </VBox>
 
-                <!-- Search Results Grid (original albumGrid) -->
                 <TilePane fx:id="albumGrid"
                           hgap="15"
                           vgap="15"
+                          tileAlignment="TOP_LEFT"
                           prefColumns="5">
                     <padding>
-                        <Insets top="20" right="20" bottom="20" left="20"/>
+                        <Insets top="0" right="0" bottom="0" left="0"/>
                     </padding>
                 </TilePane>
             </VBox>

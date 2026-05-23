@@ -13,6 +13,7 @@ import org.example.domain.Album;
 import org.example.domain.Review;
 import org.example.service.Service;
 import org.example.utils.AppContext;
+import org.example.utils.ImageCache;
 import org.example.utils.SceneManager;
 
 import java.util.Arrays;
@@ -69,11 +70,7 @@ public class AlbumController {
         artistLabel.setText(displayText(album.getArtist(), "Unknown Artist"));
 
         if (album.getCoverUrl() != null && !album.getCoverUrl().isEmpty()) {
-            try {
-                coverImage.setImage(new Image(album.getCoverUrl(), true));
-            } catch (IllegalArgumentException e) {
-                coverImage.setImage(null);
-            }
+            coverImage.setImage(ImageCache.get(album.getCoverUrl()));
         } else {
             coverImage.setImage(null);
         }

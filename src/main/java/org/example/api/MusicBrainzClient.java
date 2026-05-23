@@ -32,9 +32,10 @@ public class MusicBrainzClient {
 
         String musicBrainzQuery =
                 "(artist:\"" + escapeQuery(query) + "\" AND primarytype:album) OR "
-                        + "(releasegroup:\"" + escapeQuery(query) + "\" AND primarytype:album)";
+                        + "(releasegroup:\"" + escapeQuery(query) + "\" AND primarytype:album) OR "
+                        + "(releasegroup:" + escapeQuery(query) + " AND primarytype:album)";
 
-        return executeSearch(musicBrainzQuery, 100);
+        return executeSearch(musicBrainzQuery, 200);
     }
 
     public MusicBrainzResponse searchAlbumsByDate(LocalDate startDate, LocalDate endDate, int limit)

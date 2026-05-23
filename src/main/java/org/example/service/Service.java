@@ -238,7 +238,22 @@ public class Service implements IService{
 
             String q = query.trim();
             var response = musicBrainzClient.searchAlbums(q);
-            return processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), q);
+            List<RankedAlbum> candidates = new ArrayList<>();
+            int order = 0;
+
+            for (Album album : artworkClient.searchAlbums(q)) {
+                if (matchesAlbumSearch(q, album.getTitle(), album.getArtist())) {
+                    candidates.add(new RankedAlbum(album, 60, order++));
+                }
+            }
+
+            for (Album album : processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), q)) {
+                candidates.add(new RankedAlbum(album, 0, order++));
+            }
+
+            return rankAndDedupeAlbums(candidates, q).stream()
+                    .limit(50)
+                    .toList();
         } catch (IOException | InterruptedException e) {
             Logger.error("Error searching albums: " + e.getMessage());
             return List.of();
@@ -247,40 +262,129 @@ public class Service implements IService{
 
     public List<Album> getRecentBigReleases() {
         try {
-            LocalDate endDate = LocalDate.now();
-            LocalDate startDate = endDate.minusDays(90); // Last 3 months
-            var response = musicBrainzClient.searchAlbumsByDate(startDate, endDate, 20); // Limit to 20 for a section
-            return processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), null);
+            List<Album> albums = artworkClient.getMostPlayedAlbums().stream()
+                    .filter(album -> !isNoisyAlbum(album))
+                    .limit(15)
+                    .toList();
+
+            if (!albums.isEmpty()) {
+                return albums;
+            }
+
+            return getFallbackRecentBigReleases();
         } catch (IOException | InterruptedException e) {
             Logger.error("Error fetching recent big releases: " + e.getMessage());
-            return List.of();
+            return getFallbackRecentBigReleases();
         }
+    }
+
+    private List<Album> getFallbackRecentBigReleases() {
+        try {
+            LocalDate endDate = LocalDate.now();
+            LocalDate startDate = endDate.minusDays(120);
+            var response = musicBrainzClient.searchAlbumsByDate(startDate, endDate, 100);
+            List<Album> albums = processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), null)
+                    .stream()
+                    .filter(album -> !isNoisyAlbum(album))
+                    .limit(15)
+                    .toList();
+
+            if (!albums.isEmpty()) {
+                return albums;
+            }
+        } catch (IOException | InterruptedException e) {
+            Logger.error("Error fetching fallback recent releases: " + e.getMessage());
+        }
+
+        return resolveCuratedAlbums(List.of(
+                new AlbumPick("ICEMAN", "Drake"),
+                new AlbumPick("MUSIC", "Playboi Carti"),
+                new AlbumPick("Mayhem", "Lady Gaga"),
+                new AlbumPick("Hurry Up Tomorrow", "The Weeknd"),
+                new AlbumPick("GNX", "Kendrick Lamar"),
+                new AlbumPick("Short n' Sweet", "Sabrina Carpenter"),
+                new AlbumPick("Hit Me Hard and Soft", "Billie Eilish"),
+                new AlbumPick("Cowboy Carter", "Beyonce"),
+                new AlbumPick("The Tortured Poets Department", "Taylor Swift"),
+                new AlbumPick("Chromakopia", "Tyler, The Creator")
+        )).stream().limit(15).toList();
     }
 
     public List<Album> getDevelopersPickAlbums() {
-        List<Album> developerPicks = new ArrayList<>();
-        List<String> artists = List.of("Alice in Chains", "Megadeth", "Soundgarden", "Metallica", "Iron Maiden"); // Example artists
-
-        for (String artist : artists) {
-            try {
-                var response = musicBrainzClient.searchAlbumsByArtist(artist, 5); // Get a few albums per artist
-                developerPicks.addAll(processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), artist));
-            } catch (IOException | InterruptedException e) {
-                Logger.error("Error fetching developer's pick albums for artist " + artist + ": " + e.getMessage());
-            }
-        }
-        return developerPicks.stream().limit(20).toList(); // Limit total developer picks
+        return resolveCuratedAlbums(List.of(
+                new AlbumPick("Dirt", "Alice in Chains"),
+                new AlbumPick("Facelift", "Alice in Chains"),
+                new AlbumPick("Rust in Peace", "Megadeth"),
+                new AlbumPick("Peace Sells... But Who's Buying?", "Megadeth"),
+                new AlbumPick("Superunknown", "Soundgarden"),
+                new AlbumPick("Badmotorfinger", "Soundgarden"),
+                new AlbumPick("Master of Puppets", "Metallica"),
+                new AlbumPick("Ride the Lightning", "Metallica"),
+                new AlbumPick("Paranoid", "Black Sabbath"),
+                new AlbumPick("Nevermind", "Nirvana"),
+                new AlbumPick("Ten", "Pearl Jam"),
+                new AlbumPick("Rage Against the Machine", "Rage Against the Machine")
+        ));
     }
 
     public List<Album> getBigDebutAlbums() {
-        // This is a more complex query and might require additional logic or a different API.
-        // For now, I'll return an empty list or a placeholder.
-        // A proper implementation would involve:
-        // 1. Searching for artists.
-        // 2. For each artist, finding their earliest "Album" release.
-        // This is beyond the scope of a quick fix and might hit API rate limits quickly.
-        // Returning an empty list for now.
-        return List.of();
+        return resolveCuratedAlbums(List.of(
+                new AlbumPick("The Doors", "The Doors"),
+                new AlbumPick("Led Zeppelin", "Led Zeppelin"),
+                new AlbumPick("Black Sabbath", "Black Sabbath"),
+                new AlbumPick("Appetite for Destruction", "Guns N' Roses"),
+                new AlbumPick("Ten", "Pearl Jam"),
+                new AlbumPick("Facelift", "Alice in Chains"),
+                new AlbumPick("Kill 'Em All", "Metallica"),
+                new AlbumPick("Killing Is My Business... and Business Is Good!", "Megadeth"),
+                new AlbumPick("Definitely Maybe", "Oasis"),
+                new AlbumPick("Is This It", "The Strokes"),
+                new AlbumPick("Whatever People Say I Am, That's What I'm Not", "Arctic Monkeys"),
+                new AlbumPick("Rage Against the Machine", "Rage Against the Machine")
+        ));
+    }
+
+    private List<Album> resolveCuratedAlbums(List<AlbumPick> picks) {
+        List<Album> albums = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
+
+        for (AlbumPick pick : picks) {
+            try {
+                findBestAlbum(pick).ifPresent(album -> {
+                    String key = albumDedupeKey(album);
+                    if (seen.add(key)) {
+                        albums.add(album);
+                    }
+                });
+            } catch (IOException | InterruptedException e) {
+                Logger.error("Error fetching curated album " + pick.title() + ": " + e.getMessage());
+            }
+        }
+
+        return albums;
+    }
+
+    private Optional<Album> findBestAlbum(AlbumPick pick) throws IOException, InterruptedException {
+        String query = pick.title() + " " + pick.artist();
+
+        return artworkClient.searchAlbums(query).stream()
+                .filter(album -> normalize(album.getArtist()).equals(normalize(pick.artist())))
+                .filter(album -> normalize(album.getTitle()).contains(normalize(pick.title()))
+                        || normalize(pick.title()).contains(normalize(album.getTitle())))
+                .filter(album -> !isNoisyAlbum(album))
+                .findFirst()
+                .or(() -> {
+                    try {
+                        var response = musicBrainzClient.searchAlbumsByArtist(pick.artist(), 50);
+                        return processReleaseGroups(response != null ? response.getReleaseGroups() : List.of(), pick.title()).stream()
+                                .filter(album -> normalize(album.getArtist()).equals(normalize(pick.artist())))
+                                .filter(album -> normalize(album.getTitle()).contains(normalize(pick.title()))
+                                        || normalize(pick.title()).contains(normalize(album.getTitle())))
+                                .findFirst();
+                    } catch (IOException | InterruptedException e) {
+                        return Optional.empty();
+                    }
+                });
     }
 
     private List<Album> processReleaseGroups(List<ReleaseGroup> groups, String query) throws IOException, InterruptedException {
@@ -315,12 +419,137 @@ public class Service implements IService{
                     group.getId(),
                     title,
                     artist,
-                    null,
+                    group.getFirstReleaseDate(),
                     "Album",
                     coverUrl
             ));
         }
-        return albums;
+        if (query == null || query.isBlank()) {
+            return albums;
+        }
+
+        return albums.stream()
+                .sorted(Comparator.comparingInt((Album album) -> relevanceScore(album, query, 0)).reversed())
+                .toList();
+    }
+
+    private List<Album> rankAndDedupeAlbums(List<RankedAlbum> candidates, String query) {
+        Map<String, RankedAlbum> bestByAlbum = new LinkedHashMap<>();
+
+        for (RankedAlbum candidate : candidates) {
+            String key = albumDedupeKey(candidate.album());
+            RankedAlbum existing = bestByAlbum.get(key);
+
+            if (existing == null || compareRank(candidate, existing, query) < 0) {
+                bestByAlbum.put(key, candidate);
+            } else if (existing.album().getCoverUrl().isBlank() && !candidate.album().getCoverUrl().isBlank()) {
+                bestByAlbum.put(key, candidate);
+            }
+        }
+
+        return bestByAlbum.values().stream()
+                .sorted((left, right) -> compareRank(left, right, query))
+                .map(RankedAlbum::album)
+                .toList();
+    }
+
+    private int compareRank(RankedAlbum left, RankedAlbum right, String query) {
+        int scoreCompare = Integer.compare(
+                relevanceScore(right.album(), query, right.sourceBoost()),
+                relevanceScore(left.album(), query, left.sourceBoost())
+        );
+
+        if (scoreCompare != 0) {
+            return scoreCompare;
+        }
+
+        return Integer.compare(left.order(), right.order());
+    }
+
+    private int relevanceScore(Album album, String query, int sourceBoost) {
+        String normalizedQuery = normalize(query);
+        String normalizedTitle = normalize(album.getTitle());
+        String normalizedArtist = normalize(album.getArtist());
+        String combined = normalizedTitle + " " + normalizedArtist;
+
+        int score = sourceBoost;
+
+        if (normalizedArtist.equals(normalizedQuery)) {
+            score += 350;
+        } else if (normalizedArtist.contains(normalizedQuery)) {
+            score += 260;
+        }
+
+        if (normalizedTitle.equals(normalizedQuery)) {
+            score += 280;
+        } else if (normalizedTitle.startsWith(normalizedQuery)) {
+            score += 190;
+        } else if (normalizedTitle.contains(normalizedQuery)) {
+            score += 150;
+        }
+
+        for (String term : normalizedQuery.split(" ")) {
+            if (!term.isBlank() && combined.contains(term)) {
+                score += 25;
+            }
+        }
+
+        score -= noisePenalty(normalizedTitle);
+
+        if (album.getReleaseDate() != null && album.getReleaseDate().matches("\\d{4}.*")) {
+            int year = Integer.parseInt(album.getReleaseDate().substring(0, 4));
+            if (year >= 1960 && year <= 2015) {
+                score += 15;
+            }
+        }
+
+        if (normalizedTitle.length() > 45) {
+            score -= 20;
+        }
+
+        return score;
+    }
+
+    private int noisePenalty(String normalizedTitle) {
+        int penalty = 0;
+        List<String> noisyWords = List.of(
+                "greatest hits",
+                "best of",
+                "essential",
+                "collection",
+                "anthology",
+                "karaoke",
+                "tribute",
+                "live",
+                "remix",
+                "interview",
+                "anniversary",
+                "deluxe",
+                "expanded",
+                "remastered",
+                "single"
+        );
+
+        for (String word : noisyWords) {
+            if (normalizedTitle.contains(word)) {
+                penalty += 45;
+            }
+        }
+
+        return penalty;
+    }
+
+    private boolean isNoisyAlbum(Album album) {
+        return noisePenalty(normalize(album.getTitle())) >= 45;
+    }
+
+    private String albumDedupeKey(Album album) {
+        return normalize(album.getTitle())
+                .replace(" remastered", "")
+                .replace(" deluxe edition", "")
+                .replace(" expanded edition", "")
+                + "|"
+                + normalize(album.getArtist());
     }
 
 
@@ -386,5 +615,11 @@ public class Service implements IService{
 
         String name = group.getArtistCredit().get(0).getName();
         return name == null || name.isBlank() ? "Unknown Artist" : name;
+    }
+
+    private record RankedAlbum(Album album, int sourceBoost, int order) {
+    }
+
+    private record AlbumPick(String title, String artist) {
     }
 }

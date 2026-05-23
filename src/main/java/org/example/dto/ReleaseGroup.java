@@ -10,6 +10,10 @@ public class ReleaseGroup {
 
     private String title;
     private String id;
+    private Integer score;
+
+    @JsonProperty("first-release-date")
+    private String firstReleaseDate;
 
     @JsonProperty("primary-type")
     private String primaryType;
@@ -30,6 +34,14 @@ public class ReleaseGroup {
 
     public String getId() {
         return id;
+    }
+
+    public Integer getScore() {
+        return score;
+    }
+
+    public String getFirstReleaseDate() {
+        return firstReleaseDate;
     }
 
     public List<ArtistCredit> getArtistCredit() {

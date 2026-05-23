@@ -23,9 +23,8 @@ public class HomeController {
     @FXML private TextField searchBar;
     @FXML private TextField userSearchBar;
 
-    @FXML private TilePane albumGrid; // This will be for search results
+    @FXML private TilePane albumGrid;
 
-    // New FXML elements for sections
     @FXML private VBox recentBigReleasesSection;
     @FXML private Label recentBigReleasesTitle;
     @FXML private TilePane recentBigReleasesGrid;
@@ -37,9 +36,6 @@ public class HomeController {
     @FXML private VBox developersPickSection;
     @FXML private Label developersPickTitle;
     @FXML private TilePane developersPickGrid;
-
-
-    private ObservableList<Album> allAlbums; // This will now hold combined data for initial display or search context
 
     private Service service;
 
@@ -61,20 +57,12 @@ public class HomeController {
     }
 
     private void loadHomePageFeed() {
-        // Clear any mock data
-        if (allAlbums != null) {
-            allAlbums.clear();
-        } else {
-            allAlbums = FXCollections.observableArrayList();
-        }
-
-        // Load Recent Big Releases
+        albumGrid.getChildren().clear();
+        setSectionVisible(recentBigReleasesSection, true);
+        setSectionVisible(bigDebutAlbumsSection, true);
+        setSectionVisible(developersPickSection, true);
         loadRecentBigReleases();
-
-        // Load Big Debut Albums (currently a placeholder)
         loadBigDebutAlbums();
-
-        // Load Developer's Pick
         loadDevelopersPick();
     }
 
@@ -84,20 +72,11 @@ public class HomeController {
                 List<Album> albums = service.getRecentBigReleases();
                 Platform.runLater(() -> {
                     renderAlbums(recentBigReleasesGrid, FXCollections.observableArrayList(albums));
-                    if (!albums.isEmpty()) {
-                        recentBigReleasesSection.setVisible(true);
-                        recentBigReleasesSection.setManaged(true);
-                    } else {
-                        recentBigReleasesSection.setVisible(false);
-                        recentBigReleasesSection.setManaged(false);
-                    }
+                    setSectionVisible(recentBigReleasesSection, !albums.isEmpty());
                 });
             } catch (Exception e) {
                 Logger.error("Error loading recent big releases: " + e.getMessage());
-                Platform.runLater(() -> {
-                    recentBigReleasesSection.setVisible(false);
-                    recentBigReleasesSection.setManaged(false);
-                });
+                Platform.runLater(() -> setSectionVisible(recentBigReleasesSection, false));
             }
         }, "recent-releases-loader");
         thread.setDaemon(true);
@@ -105,37 +84,20 @@ public class HomeController {
     }
 
     private void loadBigDebutAlbums() {
-        // This section is currently a placeholder as the service method returns an empty list.
-        // Once the service method is implemented, this can be uncommented and used.
-        Platform.runLater(() -> {
-            bigDebutAlbumsSection.setVisible(false);
-            bigDebutAlbumsSection.setManaged(false);
-        });
-        /*
         Thread thread = new Thread(() -> {
             try {
                 List<Album> albums = service.getBigDebutAlbums();
                 Platform.runLater(() -> {
                     renderAlbums(bigDebutAlbumsGrid, FXCollections.observableArrayList(albums));
-                    if (!albums.isEmpty()) {
-                        bigDebutAlbumsSection.setVisible(true);
-                        bigDebutAlbumsSection.setManaged(true);
-                    } else {
-                        bigDebutAlbumsSection.setVisible(false);
-                        bigDebutAlbumsSection.setManaged(false);
-                    }
+                    setSectionVisible(bigDebutAlbumsSection, !albums.isEmpty());
                 });
             } catch (Exception e) {
                 Logger.error("Error loading big debut albums: " + e.getMessage());
-                Platform.runLater(() -> {
-                    bigDebutAlbumsSection.setVisible(false);
-                    bigDebutAlbumsSection.setManaged(false);
-                });
+                Platform.runLater(() -> setSectionVisible(bigDebutAlbumsSection, false));
             }
         }, "debut-albums-loader");
         thread.setDaemon(true);
         thread.start();
-        */
     }
 
     private void loadDevelopersPick() {
@@ -144,20 +106,11 @@ public class HomeController {
                 List<Album> albums = service.getDevelopersPickAlbums();
                 Platform.runLater(() -> {
                     renderAlbums(developersPickGrid, FXCollections.observableArrayList(albums));
-                    if (!albums.isEmpty()) {
-                        developersPickSection.setVisible(true);
-                        developersPickSection.setManaged(true);
-                    } else {
-                        developersPickSection.setVisible(false);
-                        developersPickSection.setManaged(false);
-                    }
+                    setSectionVisible(developersPickSection, !albums.isEmpty());
                 });
             } catch (Exception e) {
                 Logger.error("Error loading developer's pick albums: " + e.getMessage());
-                Platform.runLater(() -> {
-                    developersPickSection.setVisible(false);
-                    developersPickSection.setManaged(false);
-                });
+                Platform.runLater(() -> setSectionVisible(developersPickSection, false));
             }
         }, "developers-pick-loader");
         thread.setDaemon(true);
@@ -174,10 +127,9 @@ public class HomeController {
         }
     }
 
-    public List<Album> searchAlbums(String query) {
-        // This method is primarily for local filtering if allAlbums contains enough data,
-        // but with API calls, handleSearch will directly use the service.
-        return List.of(); // No longer used for primary search
+    private void setSectionVisible(VBox section, boolean visible) {
+        section.setVisible(visible);
+        section.setManaged(visible);
     }
 
     public void startSearch(String query) {
@@ -231,25 +183,18 @@ public class HomeController {
         int requestVersion = searchVersion.incrementAndGet();
 
         if (query == null || query.isBlank()) {
-            // If search bar is empty, show the home page feed again
-            albumGrid.getChildren().clear(); // Clear search results grid
-            loadHomePageFeed(); // Reload the categorized feed
+            loadHomePageFeed();
             return;
         }
 
         if (service == null) {
-            // This case should ideally not happen if service is initialized
             renderAlbums(albumGrid, FXCollections.observableArrayList());
             return;
         }
 
-        // Hide categorized sections when searching
-        recentBigReleasesSection.setVisible(false);
-        recentBigReleasesSection.setManaged(false);
-        bigDebutAlbumsSection.setVisible(false);
-        bigDebutAlbumsSection.setManaged(false);
-        developersPickSection.setVisible(false);
-        developersPickSection.setManaged(false);
+        setSectionVisible(recentBigReleasesSection, false);
+        setSectionVisible(bigDebutAlbumsSection, false);
+        setSectionVisible(developersPickSection, false);
 
 
         Thread searchThread = new Thread(() -> {
