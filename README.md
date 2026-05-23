@@ -1,6 +1,6 @@
 # Tuneboxd
 
-  Inspired by the popular movie reviewing and logging website __Letterboxd__, **Tuneboxd** is an app where you can keep track of the music you listen to and see what other people think of it.
+  Inspired by the popular movie reviewing and logging website [Letterboxd](https://letterboxd.com/), **Tuneboxd** is an app where you can keep track of the music you listen to and see what other people think of it.
 
   In this app you can:
 
