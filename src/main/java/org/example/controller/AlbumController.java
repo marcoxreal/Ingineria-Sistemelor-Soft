@@ -295,11 +295,11 @@ public class AlbumController {
 
             for (int i = 1; i <= 5; i++) {
                 if (i <= fullStars) {
-                    builder.append("★");
+                    builder.append("\u2605");
                 } else if (i == fullStars + 1 && halfStar) {
-                    builder.append("½");
+                    builder.append("\u00BD");
                 } else {
-                    builder.append("☆");
+                    builder.append("\u2606");
                 }
             }
 

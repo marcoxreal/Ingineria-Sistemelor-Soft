@@ -16,6 +16,7 @@
     </top>
 
     <center>
+        <ScrollPane fitToWidth="true" styleClass="page-scroll">
         <VBox alignment="TOP_CENTER" spacing="18" styleClass="user-page">
             <HBox alignment="CENTER_LEFT" spacing="18" styleClass="user-header">
                 <StackPane styleClass="profile-image-frame">
@@ -35,7 +36,8 @@
                         <Label fx:id="listenedLabel" styleClass="stat-label"/>
                     </HBox>
                     <HBox fx:id="profilePictureEditor" alignment="CENTER_LEFT" spacing="8">
-                        <TextField fx:id="profilePictureUrlField" promptText="Profile picture URL" HBox.hgrow="ALWAYS"/>
+                        <TextField fx:id="profilePictureUrlField" promptText="Selected profile picture" HBox.hgrow="ALWAYS"/>
+                        <Button text="Choose Photo" onAction="#handleChooseProfilePicture" styleClass="secondary-button"/>
                         <Button text="Save Photo" onAction="#handleSaveProfilePicture"/>
                     </HBox>
                 </VBox>
@@ -57,6 +59,7 @@
                 <ListView fx:id="activityList" prefHeight="180"/>
             </VBox>
         </VBox>
+        </ScrollPane>
     </center>
 
 </BorderPane>

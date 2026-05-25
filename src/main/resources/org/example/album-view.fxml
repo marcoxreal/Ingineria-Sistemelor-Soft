@@ -21,6 +21,7 @@
 
     <!-- MAIN CONTENT -->
     <center>
+        <ScrollPane fitToWidth="true" styleClass="page-scroll">
         <VBox alignment="CENTER" spacing="20" styleClass="album-container">
 
             <ImageView fx:id="coverImage"
@@ -61,6 +62,7 @@
             </VBox>
 
         </VBox>
+        </ScrollPane>
     </center>
 
 </BorderPane>

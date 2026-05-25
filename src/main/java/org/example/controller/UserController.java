@@ -10,6 +10,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.TilePane;
+import javafx.stage.FileChooser;
 import org.example.domain.Album;
 import org.example.domain.User;
 import org.example.domain.UserActivity;
@@ -17,6 +18,8 @@ import org.example.service.Service;
 import org.example.utils.AlbumCardFactory;
 import org.example.utils.AppContext;
 import org.example.utils.SceneManager;
+
+import java.io.File;
 
 public class UserController {
     @FXML private ImageView profileImage;
@@ -108,6 +111,29 @@ public class UserController {
         } catch (Exception e) {
             showError(e.getMessage());
         }
+    }
+
+    @FXML
+    public void handleChooseProfilePicture() {
+        if (!isOwnProfile()) {
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Choose profile picture");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Image files", "*.png", "*.jpg", "*.jpeg", "*.gif")
+        );
+
+        File selectedFile = fileChooser.showOpenDialog(SceneManager.getStage());
+        if (selectedFile == null) {
+            return;
+        }
+
+        String imageUri = selectedFile.toURI().toString();
+        profilePictureUrlField.setText(imageUri);
+        profileImage.setImage(new Image(imageUri, true));
+        profilePlaceholder.setVisible(false);
     }
 
     private void renderUser() {
